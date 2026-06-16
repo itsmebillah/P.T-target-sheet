@@ -3,617 +3,1774 @@
 <head>
   <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Target Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#111827">
+  <title>PT CPI - Unified Target & Analytics Gateway</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg-1: #07111f;
-      --bg-2: #10243a;
-      --panel: rgba(7, 17, 31, 0.78);
-      --line: rgba(148, 163, 184, 0.18);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #22c55e;
-      --accent-2: #38bdf8;
-      --danger: #f97316;
-    }
-
-    body {
-      min-height: 100vh;
-      margin: 0;
-      color: var(--text);
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.12), transparent 30%),
-        linear-gradient(135deg, var(--bg-1), var(--bg-2));
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      backdrop-filter: blur(16px);
-    }
-
-    .table-shell {
-      overflow: auto;
-      border-radius: 18px;
-      border: 1px solid var(--line);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-
-    th, td {
-      border-right: 1px solid rgba(148, 163, 184, 0.12);
-      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-      padding: 10px 12px;
-      white-space: nowrap;
-    }
-
-    thead th {
+    body { background: linear-gradient(135deg, #090d16 0%, #111827 100%); min-height: 100vh; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .glass-card { background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.07); }
+    .table-wrapper { position: relative; overflow: auto; max-height: 55vh; border-radius: 12px; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
+    .desktop-shell { width: min(98vw, 1880px); }
+    .desktop-matrix-card { position: relative; }
+    .desktop-bottom-scrollbar {
       position: sticky;
-      top: 0;
-      z-index: 10;
-      background: #0f1c2d;
+      bottom: 96px;
+      z-index: 32;
+      display: none;
+      overflow-x: auto;
+      overflow-y: hidden;
+      height: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.92);
+      scrollbar-color: #475569 #0f172a;
+      scrollbar-width: thin;
     }
-
-    thead tr:nth-child(2) th {
-      top: 49px;
-      z-index: 11;
-      background: #12233a;
+    .desktop-bottom-scrollbar::-webkit-scrollbar { height: 12px; }
+    .desktop-bottom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.92); }
+    .desktop-bottom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 999px; }
+    .desktop-bottom-scrollbar-inner { height: 1px; }
+    table { border-collapse: separate; border-spacing: 0; width: 100%; }
+    thead tr th { position: sticky; top: 0; z-index: 20; background-color: #111827; padding: 12px; }
+    thead tr:nth-child(2) th { top: 48px; z-index: 20; }
+    thead tr:nth-child(3) th { top: 96px; z-index: 20; }
+    .sticky-col { position: sticky; left: 0; z-index: 30; background-color: #1f2937 !important; min-width: 220px !important; max-width: 220px !important; text-align: left !important; }
+    thead th.sticky-col { z-index: 40; background-color: #111827 !important; }
+    .matrix-input { width: 92px !important; min-width: 92px !important; min-height: 48px; font-size: 15px !important; text-align: center; background: #030712; border: 1px solid #374151; border-radius: 6px; padding: 8px 6px; color: #2dd4bf; font-weight: 800; font-family: monospace; }
+    #matrixTable th, #matrixTable td { min-width: 128px !important; max-width: 128px !important; padding: 8px 5px !important; }
+    #matrixTable th.sticky-col, #matrixTable td.sticky-col { min-width: 220px !important; max-width: 220px !important; }
+    .matrix-product-cell { line-height: 1.2; padding: 10px 10px !important; }
+    .matrix-product-label {
+      white-space: normal;
+      word-break: normal;
     }
-
-    .sticky-col {
-      position: sticky;
+    .matrix-product-name { display: block; font-size: 13px; font-weight: 700; color: #e2e8f0; line-height: 1.25; }
+    .matrix-product-size { display: block; margin-top: 3px; font-size: 11px; color: rgba(148, 163, 184, 0.82); font-weight: 500; line-height: 1.1; }
+    .dealer-header-code { display: block; font-size: 14px; font-weight: 700; line-height: 1.15; }
+    .dealer-header-name { display: block; margin-top: 3px; font-size: 11px; color: #cbd5e1; line-height: 1.2; font-weight: 500; }
+    .sr-total-cell { background-color: #0f172a; color: #34d399 !important; font-weight: 900; font-family: monospace; font-size: 15px; border-left: 2px solid #4338ca !important; }
+    th, td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: center; }
+    .filter-select { background-color: #0f172a; border: 1px solid #374151; border-radius: 8px; padding: 8px 10px; color: #f8fafc; font-size: 13px; outline: none; width: 100%; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
+    .sticky-submit-shell { padding-bottom: 112px; }
+    .sticky-submit-bar {
+      position: fixed;
+      bottom: 0;
       left: 0;
-      z-index: 12;
-      background: #0b1626;
+      right: 0;
+      z-index: 45;
+      background: rgba(3, 7, 18, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(45, 212, 191, 0.18);
+      box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.28);
+    }
+    .sync-banner { border: 1px solid rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.08); }
+    @media (max-width: 767px) {
+      body { padding: 12px; }
+      #tsmDashboard { padding-bottom: 118px; }
+      .table-wrapper { overflow: auto; max-height: none; }
+      .desktop-shell { width: 100%; }
+      .desktop-bottom-scrollbar { display: none !important; }
+      #matrixTable th, #matrixTable td { min-width: 92px !important; max-width: 92px !important; padding: 5px 3px !important; }
+      #matrixTable th.sticky-col, #matrixTable td.sticky-col { min-width: 148px !important; max-width: 148px !important; }
+      .sticky-col { padding: 5px 6px !important; }
+      .matrix-input { width: 66px !important; min-width: 66px !important; min-height: 42px; font-size: 15px !important; padding: 6px 4px; }
+      .matrix-product-cell { font-size: 14px !important; line-height: 1.15; }
+      .matrix-product-label {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .matrix-product-name { font-size: 13px !important; line-height: 1.15; }
+      .matrix-product-size { font-size: 10px !important; line-height: 1.05; opacity: 0.85; }
+      #dealerRow th:not(.sticky-col) { font-size: 13px !important; line-height: 1.1; padding: 5px 3px !important; }
+      #dealerRow th:not(.sticky-col) span { font-size: 13px !important; line-height: 1.05; display: block; margin-top: 2px; }
+      #srRow th:not(.sticky-col) { font-size: 12px !important; line-height: 1.1; padding: 5px 3px !important; }
+      #territoryRow th:not(.sticky-col) { font-size: 11px !important; line-height: 1.1; padding: 5px 3px !important; }
+      #dealerRow .sticky-col, #srRow .sticky-col, #territoryRow .sticky-col, #matrixFooter .sticky-col { font-size: 12px !important; }
+      #matrixBody .sticky-col { font-size: 14px !important; }
+      #matrixBody .sticky-col .text-slate-400 { font-size: 13px !important; line-height: 1.05; }
+      #tsmDashboard .glass-card.rounded-xl.p-4.mb-4 { align-items: stretch; }
+      .sticky-submit-bar .submit-meta { display: grid; gap: 4px; }
     }
 
-    thead .sticky-col {
-      z-index: 20;
+    #printReportHeader, #printSignaturePanel, #printDeveloperWatermark { display: none; }
+    @media print {
+      html, body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; height: auto !important; min-height: 100% !important; }
+      #loginPage, #tsmDashboard, #pendingModal, #submissionSuccessModal, footer, button, select, label, #successPrintBtn, #successCloseBtn { display: none !important; }
+      #adminDashboard { display: block !important; background: white !important; color: black !important; padding: 15px !important; position: relative !important; min-height: 95vh !important; }
+      #centralReportContainer { display: block !important; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+      .overflow-x-auto { overflow: visible !important; display: block !important; }
+      #adminReportTable { display: table !important; width: 100% !important; border: 1px solid #000 !important; color: black !important; border-collapse: collapse !important; margin-top: 15px !important; }
+      #adminReportTable th, #adminReportTable td { color: black !important; border: 1px solid #000 !important; padding: 8px 6px !important; background: transparent !important; font-size: 11px !important; }
+      #adminReportBody tr { display: table-row !important; }
+      .sticky-col { position: static !important; background: transparent !important; }
+      thead { display: table-header-group !important; }
+      #printReportHeader { display: block !important; border-bottom: 2px dashed #000; padding-bottom: 12px; margin-bottom: 15px; }
+      #printSignaturePanel { display: block !important; margin-top: 40px !important; width: 100% !important; page-break-inside: avoid !important; }
+      #printDeveloperWatermark { display: block !important; position: fixed !important; bottom: 15px !important; right: 20px !important; width: auto !important; font-size: 9px !important; color: #6b7280 !important; font-style: italic !important; font-family: monospace !important; }
     }
-
-    .input-cell {
-      width: 88px;
-      border-radius: 10px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      background: #091220;
-      color: #d1fae5;
-      padding: 8px;
-      text-align: center;
-      font-weight: 700;
-      outline: none;
-    }
-
-    .input-cell:focus {
-      border-color: rgba(34, 197, 94, 0.7);
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18);
+    @media (min-width: 768px) {
+      .desktop-bottom-scrollbar { display: block; }
     }
   </style>
 </head>
-<body class="p-4 md:p-6">
-  <div id="loginView" class="max-w-md mx-auto pt-12">
-    <div class="panel rounded-3xl p-8 shadow-2xl">
-      <div class="mb-8 text-center">
-        <p class="text-xs uppercase tracking-[0.35em] text-sky-300/80">Target Management System</p>
-        <h1 class="mt-3 text-3xl font-black tracking-wide text-white">Sheet-Driven Portal</h1>
-        <p class="mt-3 text-sm text-slate-400">Authenticate from <span class="font-semibold text-slate-200">User_Master</span> and work directly against the ledger model.</p>
-      </div>
+<body class="p-3 md:p-6">
 
-      <div class="space-y-4">
-        <div>
-          <label for="userId" class="mb-2 block text-xs font-bold uppercase tracking-[0.25em] text-slate-400">TSM ID</label>
-          <input id="userId" type="text" class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-sky-400" placeholder="Enter TSM ID">
-        </div>
-        <div>
-          <label for="password" class="mb-2 block text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Password</label>
-          <input id="password" type="password" class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-sky-400" placeholder="Enter password">
-        </div>
-        <button id="loginButton" class="w-full rounded-2xl bg-gradient-to-r from-sky-500 to-emerald-500 px-4 py-3 text-sm font-black uppercase tracking-[0.2em] text-slate-950">Login</button>
+  <div id="loginPage" class="max-w-md mx-auto mt-20 glass-card rounded-2xl p-6 md:p-8 shadow-2xl">
+    <div class="text-center mb-6">
+      <h2 class="text-xl md:text-2xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-indigo-400 uppercase">PT CONSUMER PRODUCTS IND.</h2>
+      <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest">Unified Entry & Gateway</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">User ID</label>
+        <input type="text" id="userId" placeholder="Enter ID" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-400 font-medium">
       </div>
-
-      <p id="loginMessage" class="mt-4 hidden rounded-2xl border border-orange-400/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-200"></p>
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Password</label>
+        <input type="password" id="password" placeholder="Enter password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-400">
+      </div>
+      <button onclick="performGatewayLogin()" id="loginBtn" class="w-full bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">Verify &amp; Access System</button>
     </div>
   </div>
 
-  <div id="appView" class="hidden">
-    <div class="mx-auto max-w-7xl">
-      <div class="panel mb-5 rounded-3xl p-5 shadow-xl">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Authenticated Session</p>
-            <h2 id="appTitle" class="mt-2 text-2xl font-black text-white"></h2>
-            <p id="appSubtitle" class="mt-1 text-sm text-slate-400"></p>
-          </div>
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div>
-              <label for="monthSelect" class="mb-2 block text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Month</label>
-              <select id="monthSelect" class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm font-bold text-emerald-300 outline-none focus:border-emerald-400"></select>
-            </div>
-            <button id="logoutButton" class="rounded-2xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-200">Logout</button>
+  <div id="tsmDashboard" class="desktop-shell mx-auto hidden sticky-submit-shell">
+    <div id="tsmTopPanel" class="glass-card rounded-xl p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
+      <div class="flex items-center gap-3">
+        <div>
+          <h1 id="tsmWelcome" class="text-lg font-bold text-teal-400"></h1>
+          <p id="tsmArea" class="text-xs text-slate-400 uppercase tracking-wider mt-0.5"></p>
+          <div class="flex flex-wrap items-center gap-2 mt-3">
+            <button type="button" onclick="scrollToTsmSection('tsmTopPanel')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] px-3 py-1.5 rounded-lg border border-slate-700 transition">Current Entry</button>
+            <button type="button" onclick="openSubmissionHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] px-3 py-1.5 rounded-lg border border-slate-700 transition">My Submissions</button>
           </div>
         </div>
       </div>
+      <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+        <label class="text-xs font-bold text-slate-400 uppercase">Select Target Month:</label>
+        <select id="targetMonthSelect" class="bg-transparent text-sm text-teal-400 font-bold focus:outline-none cursor-pointer outline-none"></select>
+        <span id="submissionStatusBadge" class="hidden text-[11px] px-2.5 py-1 rounded-full font-bold uppercase"></span>
+      </div>
+    </div>
 
-      <div id="tsmView" class="hidden">
-        <div class="grid gap-4 md:grid-cols-3">
-          <div class="panel rounded-3xl p-5">
-            <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Assigned Rows</p>
-            <p id="dealerRowCount" class="mt-2 text-3xl font-black text-white">0</p>
-          </div>
-          <div class="panel rounded-3xl p-5">
-            <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Product Columns</p>
-            <p id="productCount" class="mt-2 text-3xl font-black text-white">0</p>
-          </div>
-          <div class="panel rounded-3xl p-5">
-            <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Grand Target</p>
-            <p id="grandTarget" class="mt-2 text-3xl font-black text-emerald-300">0.00</p>
-          </div>
+    <div id="networkBanner" class="hidden sync-banner rounded-xl px-4 py-3 mb-4 text-xs font-semibold text-amber-200">
+      You are offline. Draft changes will stay on this device until you sync.
+    </div>
+
+    <div id="installPromptRow" class="hidden mb-4">
+      <button id="installAppBtn" type="button" class="glass-card rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-wider text-sky-300 border border-sky-400/20">Install App</button>
+    </div>
+
+    <div class="glass-card rounded-xl shadow-2xl overflow-hidden desktop-matrix-card">
+      <div class="table-wrapper" id="mainTableWrapper">
+        <table id="matrixTable">
+          <thead>
+            <tr id="dealerRow"><th class="sticky-col">Dealer Code / Name</th></tr>
+            <tr id="srRow"><th class="sticky-col">SR Name</th></tr>
+            <tr id="territoryRow"><th class="sticky-col text-slate-400">Product List Matrix</th></tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+          <tfoot id="matrixFooter" class="bg-slate-900 font-bold text-xs">
+            <tr class="border-t-2 border-slate-700">
+              <td class="sticky-col text-left font-bold text-teal-400 bg-[#1f2937]">Dealer Target (Ctn)</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div id="desktopBottomScrollbar" class="desktop-bottom-scrollbar">
+        <div id="desktopBottomScrollbarInner" class="desktop-bottom-scrollbar-inner"></div>
+      </div>
+    </div>
+
+    <div class="sticky-submit-bar px-3 py-3 md:px-6">
+      <div class="desktop-shell mx-auto flex items-center gap-3 justify-between">
+        <div class="submit-meta min-w-0">
+          <p class="text-[11px] uppercase tracking-wider text-slate-400">Total Target</p>
+          <p id="stickyGrandTotal" class="text-lg font-black text-teal-400 font-mono">0.00 Ctn</p>
+          <p id="saveStatusText" class="text-[11px] text-slate-400">Ready to edit</p>
         </div>
-
-        <div class="panel mt-5 rounded-3xl p-5 shadow-xl">
-          <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h3 class="text-xl font-black text-white">Dealer Target Matrix</h3>
-              <p class="mt-1 text-sm text-slate-400">Each row represents one <span class="font-semibold text-slate-200">Month + Dealer + SR</span>.</p>
-            </div>
-            <button id="submitButton" class="rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-400 px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-slate-950">Save Monthly Targets</button>
-          </div>
-
-          <p id="submissionMessage" class="mb-4 hidden rounded-2xl border px-4 py-3 text-sm"></p>
-
-          <div class="table-shell">
-            <table id="matrixTable">
-              <thead id="matrixHead"></thead>
-              <tbody id="matrixBody"></tbody>
-            </table>
-          </div>
+        <div class="flex items-center gap-2">
+          <button id="stickyInstallBtn" type="button" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-3 rounded-lg border border-slate-700 transition shadow-lg">Install</button>
+          <button id="submitBtn" onclick="submitTsmMatrix()" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold px-5 py-3 rounded-xl shadow-md transition transform active:scale-95">Submit Targets</button>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div id="adminView" class="hidden">
-        <div class="grid gap-4 md:grid-cols-2">
-          <div class="panel rounded-3xl p-5">
-            <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Ledger Rows</p>
-            <p id="adminRowCount" class="mt-2 text-3xl font-black text-white">0</p>
-          </div>
-          <div class="panel rounded-3xl p-5">
-            <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Total Dealer Target</p>
-            <p id="adminTotalTarget" class="mt-2 text-3xl font-black text-sky-300">0.00</p>
-          </div>
-        </div>
+  <div id="adminDashboard" class="desktop-shell mx-auto hidden flex flex-col">
+    <div id="printReportHeader" class="text-black">
+      <div class="text-center">
+        <h1 class="text-xl font-black uppercase tracking-wider">PT CONSUMER PRODUCTS INDUSTRIES</h1>
+        <p class="text-xs font-bold text-gray-700 uppercase tracking-widest mt-0.5">National Level Live Target vs Sales Qty Gap Matrix Analytics</p>
+      </div>
+      <div class="mt-4 bg-gray-100 p-3 rounded-lg border border-gray-300 text-xs grid grid-cols-2 gap-y-1.5 font-medium">
+        <div><span class="font-bold text-gray-800">Target Month:</span> <span id="pMetaMonth">N/A</span></div>
+        <div><span class="font-bold text-gray-800">RSM / Zone Filter:</span> <span id="pMetaRsm">N/A</span></div>
+        <div><span class="font-bold text-gray-800">TSM Filter:</span> <span id="pMetaTsm">N/A</span></div>
+        <div><span class="font-bold text-gray-800">SR Representative:</span> <span id="pMetaSr">N/A</span></div>
+        <div class="col-span-2 border-t border-gray-200 mt-1 pt-1"><span class="font-bold text-gray-800">Report Generated On:</span> <span id="pMetaTime"></span></div>
+      </div>
+    </div>
 
-        <div class="panel mt-5 rounded-3xl p-5 shadow-xl">
-          <div class="mb-4">
-            <h3 class="text-xl font-black text-white">Monthly Ledger View</h3>
-            <p class="mt-1 text-sm text-slate-400">Sales, print, and export are intentionally excluded from this refactor.</p>
-          </div>
-          <div class="table-shell">
-            <table>
-              <thead>
-                <tr>
-                  <th class="sticky-col text-left">RSM</th>
-                  <th class="text-left">TSM Name</th>
-                  <th class="text-left">TSM ID</th>
-                  <th class="text-left">SR Name</th>
-                  <th class="text-left">Dealer Code</th>
-                  <th class="text-left">Dealer Name</th>
-                  <th class="text-left">Territory</th>
-                  <th class="text-right">Dealer Target</th>
-                </tr>
-              </thead>
-              <tbody id="adminBody"></tbody>
-            </table>
-          </div>
+    <div class="glass-card rounded-xl p-5 mb-4 flex flex-col md:flex-row justify-between items-start md:items-center shadow-lg gap-4">
+      <div>
+        <h1 class="text-xl font-extrabold text-indigo-400 tracking-wide">HQ EXECUTIVE OPERATIONS DASHBOARD</h1>
+        <p id="adminWelcome" class="text-xs text-teal-400 font-bold uppercase tracking-wider mt-1"></p>
+        <p class="text-xs text-slate-400 uppercase tracking-widest mt-0.5">National Level Live Target vs Sales Qty Gap Matrix Analytics</p>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+        <button onclick="clearAdminFilters()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-700 transition shadow-lg">Clear Filters</button>
+        <button onclick="refreshAdminLedgerData()" id="adminRefreshBtn" class="bg-indigo-600 hover:bg-indigo-500 font-bold text-xs px-5 py-2.5 rounded-lg border border-indigo-500 transition shadow-lg">Refresh Ledger</button>
+      </div>
+    </div>
+
+    <div class="glass-card rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 shadow-md border border-slate-800/60">
+      <div>
+        <label class="block text-[11px] font-bold text-amber-400 uppercase mb-1 tracking-wider">0. Target Month</label>
+        <select id="filterMonth" onchange="applyAdminCascadingFilters()" class="filter-select font-bold text-amber-400"><option value="ALL">-- All Months --</option></select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1 tracking-wider">1. RSM Filter</label>
+        <select id="filterRsm" onchange="onRsmFilterChange()" class="filter-select"><option value="ALL">-- All RSMs --</option></select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1 tracking-wider">2. TSM Filter</label>
+        <select id="filterTsm" onchange="onTsmFilterChange()" class="filter-select"><option value="ALL">-- All TSMs --</option></select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1 tracking-wider">3. SR Filter</label>
+        <select id="filterSr" onchange="applyAdminCascadingFilters()" class="filter-select"><option value="ALL">-- All SRs --</option></select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1 tracking-wider">4. Product SKU</label>
+        <select id="filterProduct" onchange="applyAdminCascadingFilters()" class="filter-select"><option value="ALL">-- Matrix Pure Qty Mode --</option></select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="glass-card p-4 rounded-xl border-l-4 border-teal-400 shadow-md">
+        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Target Volume</h4>
+        <p id="totalVolumeKPI" class="text-xl font-black text-teal-400 mt-1 font-mono">0.00 <span class="text-xs font-normal text-slate-400">Ctn</span></p>
+      </div>
+      <div class="glass-card p-4 rounded-xl border-l-4 border-emerald-400 shadow-md">
+        <h4 class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Total Actual Sales Volume</h4>
+        <p id="totalActualVolumeKPI" class="text-xl font-black text-emerald-400 mt-1 font-mono">0.00 <span class="text-xs font-normal text-slate-400">Ctn</span></p>
+      </div>
+      <div class="glass-card p-4 rounded-xl border-l-4 border-amber-400 shadow-md">
+        <h4 class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Net Volume Qty Gap</h4>
+        <p id="netQtyGapKPI" class="text-xl font-black text-amber-400 mt-1 font-mono">0.00 <span class="text-xs font-normal text-slate-400">Ctn</span></p>
+      </div>
+      <div onclick="showPendingTsmModal()" class="glass-card p-4 rounded-xl border-l-4 border-rose-500 shadow-md cursor-pointer hover:bg-rose-950/20 transition group">
+        <h4 class="text-[11px] font-bold text-rose-400 uppercase tracking-wider flex justify-between items-center">Submission Tracker <button type="button" onclick="event.stopPropagation(); showPendingTsmModal();" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold group-hover:scale-110 transition">View Pending</button></h4>
+        <p id="submissionKPI" class="text-xl font-black text-rose-400 mt-1 font-mono">0 / 0 <span class="text-[10px] font-normal text-slate-400">TSM Submitted</span></p>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 mb-3">
+      <button onclick="downloadFilteredCSV()" class="bg-emerald-600 hover:bg-emerald-500 font-bold text-xs px-4 py-2 rounded-lg border border-emerald-500 transition shadow flex items-center gap-1">Download CSV</button>
+      <button onclick="triggerSystemPrint()" class="bg-slate-700 hover:bg-slate-600 font-bold text-xs px-4 py-2 rounded-lg border border-slate-600 transition shadow flex items-center gap-1">Print Report</button>
+    </div>
+
+    <div class="glass-card rounded-xl shadow-xl overflow-hidden" id="centralReportContainer">
+      <div class="p-4 bg-slate-800/40 border-b border-slate-700">
+        <h3 class="font-bold text-slate-200 text-xs uppercase tracking-wider">Consolidated Channel Ledger &amp; Qty Variance Matrix</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left" id="adminReportTable">
+          <thead class="bg-slate-900 text-slate-400 text-[11px] uppercase tracking-wider">
+            <tr>
+              <th class="p-4 text-left">RSM / Zone</th>
+              <th class="p-4 text-left">TSM Name</th>
+              <th class="p-4 text-center">SR Representative</th>
+              <th class="p-4 text-right bg-teal-950/20 text-teal-400">Target Qty (Ctn)</th>
+              <th class="p-4 text-right bg-emerald-950/20 text-emerald-400">Actual Sales (Ctn)</th>
+              <th class="p-4 text-right bg-amber-950/20 text-amber-400">Qty Variance / Gap</th>
+              <th class="p-4 text-center bg-indigo-950/30 text-indigo-400 font-bold">Achievement %</th>
+            </tr>
+          </thead>
+          <tbody id="adminReportBody" class="divide-y divide-slate-800 text-sm text-slate-300"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="printSignaturePanel" class="w-full text-black font-bold">
+      <div class="flex justify-between px-10">
+        <div class="text-center"><p class="border-t border-black w-40 pt-1 text-[11px]">Prepared by</p></div>
+        <div class="text-center"><p class="border-t border-black w-40 pt-1 text-[11px]">Checked by</p></div>
+        <div class="text-center"><p class="border-t border-black w-40 pt-1 text-[11px]">Authorized by</p></div>
+      </div>
+    </div>
+
+    <div id="printDeveloperWatermark">
+      <p>System Developed by: Md. Masum Billah</p>
+    </div>
+  </div>
+
+  <div id="pendingModal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden p-4">
+    <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-slate-700/80 shadow-2xl transform transition scale-100 animate-fadeIn">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-rose-400 font-extrabold tracking-wide uppercase text-sm">Pending Submission Status</h3>
+        <button onclick="closePendingTsmModal()" class="text-slate-400 hover:text-white font-bold text-lg">X</button>
+      </div>
+      <div id="pendingTsmListContainer" class="max-h-[40vh] overflow-y-auto space-y-2 pr-1 font-semibold text-sm text-slate-200"></div>
+      <button onclick="closePendingTsmModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2.5 rounded-xl mt-5 border border-slate-700 transition">Close Tracker</button>
+    </div>
+  </div>
+
+  <div id="submissionSuccessModal" class="fixed inset-0 bg-black/70 z-50 items-center justify-center hidden p-4">
+    <div class="glass-card rounded-2xl max-w-lg w-full p-6 border border-emerald-500/30 shadow-2xl animate-fadeIn">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-emerald-400 font-extrabold tracking-wide uppercase text-sm">Target Submitted Successfully</h3>
+        <p class="text-xs text-slate-400 mt-1">Monthly target data has been saved with overwrite protection.</p>
+      </div>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">Reference Number</span><span id="successReference" class="font-bold text-emerald-300"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Month</span><span id="successMonth" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">TSM</span><span id="successTsm" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Area</span><span id="successArea" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Total Dealers Submitted</span><span id="successDealers" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Total Target Qty</span><span id="successTargetQty" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Submitted At</span><span id="successSubmittedAt" class="font-bold text-white"></span></div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button id="successViewBtn" onclick="viewLatestSubmission()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-600 transition shadow-lg">View Submission</button>
+        <button id="successPrintBtn" onclick="printSubmissionDocument()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-lg border border-emerald-500 transition shadow-lg">Print Report</button>
+        <button id="successPdfBtn" onclick="downloadSubmissionPdf()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 rounded-lg border border-indigo-500 transition shadow-lg">Download PDF</button>
+        <button id="successCloseBtn" onclick="closeSubmissionSuccessModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-700 transition shadow-lg">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="submissionHistoryModal" class="fixed inset-0 bg-black/70 z-50 items-center justify-center hidden p-4">
+    <div class="glass-card rounded-2xl max-w-6xl w-full p-6 border border-slate-700/80 shadow-2xl animate-fadeIn">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4 gap-3">
+        <div>
+          <h3 class="text-slate-100 font-extrabold tracking-wide uppercase text-sm">My Submission History</h3>
+          <p class="text-xs text-slate-400 mt-1">Review, edit, reprint, and download previous target submissions.</p>
         </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="loadSubmissionHistory(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 rounded-lg border border-slate-700 transition shadow-lg">Refresh History</button>
+          <button type="button" onclick="closeSubmissionHistoryModal()" class="text-slate-400 hover:text-white font-bold text-lg">X</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto max-h-[70vh]">
+        <table class="w-full text-left">
+          <thead class="bg-slate-900 text-slate-400 text-[11px] uppercase tracking-wider">
+            <tr>
+              <th class="p-4 text-left">Month</th>
+              <th class="p-4 text-left">Reference Number</th>
+              <th class="p-4 text-left">Submission Date</th>
+              <th class="p-4 text-right">Total Dealers</th>
+              <th class="p-4 text-right">Total Target Qty</th>
+              <th class="p-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="submissionHistoryBody" class="divide-y divide-slate-800 text-sm text-slate-300">
+            <tr><td colspan="6" class="p-4 text-slate-400 text-left">Loading submission history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-5 flex justify-end">
+        <button type="button" onclick="closeSubmissionHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-700 transition shadow-lg">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="submissionReviewModal" class="fixed inset-0 bg-black/70 z-50 items-center justify-center hidden p-4">
+    <div class="glass-card rounded-2xl max-w-lg w-full p-6 border border-amber-500/30 shadow-2xl animate-fadeIn">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-amber-300 font-extrabold tracking-wide uppercase text-sm">Review Before Submission</h3>
+        <p class="text-xs text-slate-400 mt-1">Please review your entries before final submission.</p>
+      </div>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">Month</span><span id="reviewMonth" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">TSM Name</span><span id="reviewTsm" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Total Dealers</span><span id="reviewDealers" class="font-bold text-white"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Total Target Qty</span><span id="reviewTargetQty" class="font-bold text-white"></span></div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" onclick="closeSubmissionReviewModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-700 transition shadow-lg">Back to Edit</button>
+        <button type="button" onclick="confirmSubmissionFromReview()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-lg border border-amber-300/50 transition shadow-lg">Confirm Submission</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="draftPromptModal" class="fixed inset-0 bg-black/70 z-50 items-center justify-center hidden p-4">
+    <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-amber-500/30 shadow-2xl animate-fadeIn">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <h3 id="draftPromptTitle" class="text-amber-300 font-extrabold tracking-wide uppercase text-sm">Draft Found</h3>
+        <p id="draftPromptMessage" class="text-xs text-slate-400 mt-1"></p>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button id="draftPromptPrimary" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-lg border border-amber-300/50 transition shadow-lg"></button>
+        <button id="draftPromptSecondary" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-700 transition shadow-lg"></button>
       </div>
     </div>
   </div>
 
   <script>
-    var AppState = {
+    var sessionData = {
       sessionToken: "",
       user: null,
       monthOptions: [],
-      selectedMonth: "",
-      matrix: null,
-      adminView: null
+      matrixData: null,
+      adminData: null,
+      currentFilteredEntries: [],
+      pendingTsms: [],
+      pendingTracker: null,
+      lastSubmission: null,
+      pendingSubmissionPayload: null,
+      submissionHistory: [],
+      installPromptEvent: null,
+      tsmState: {
+        values: {},
+        status: "Ready to edit",
+        statusMode: "idle",
+        draftPromptHandled: false,
+        autosaveTimer: null
+      }
     };
 
-    var Dom = {
-      loginView: document.getElementById("loginView"),
-      appView: document.getElementById("appView"),
-      loginButton: document.getElementById("loginButton"),
-      logoutButton: document.getElementById("logoutButton"),
-      monthSelect: document.getElementById("monthSelect"),
-      loginMessage: document.getElementById("loginMessage"),
-      submissionMessage: document.getElementById("submissionMessage"),
-      appTitle: document.getElementById("appTitle"),
-      appSubtitle: document.getElementById("appSubtitle"),
-      tsmView: document.getElementById("tsmView"),
-      adminView: document.getElementById("adminView"),
-      matrixHead: document.getElementById("matrixHead"),
-      matrixBody: document.getElementById("matrixBody"),
-      adminBody: document.getElementById("adminBody")
-    };
+    document.getElementById("targetMonthSelect").addEventListener("change", function() {
+      reloadTsmMatrix(this.value);
+    });
+    document.getElementById("installAppBtn").addEventListener("click", promptInstallApp);
+    document.getElementById("stickyInstallBtn").addEventListener("click", promptInstallApp);
+    document.getElementById("draftPromptPrimary").addEventListener("click", handleDraftPrimaryAction);
+    document.getElementById("draftPromptSecondary").addEventListener("click", handleDraftSecondaryAction);
+    window.addEventListener("online", handleOnlineStateChange);
+    window.addEventListener("offline", handleOnlineStateChange);
+    window.addEventListener("resize", syncDesktopMatrixScrollbar);
+    window.addEventListener("beforeunload", function() {
+      if (sessionData.user && sessionData.user.role === "tsm") {
+        persistDraftToLocal(false);
+      }
+    });
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "hidden" && sessionData.user && sessionData.user.role === "tsm") {
+        persistDraftToLocal(false);
+      }
+    });
+    // PWA features are intentionally disabled while stabilizing the Apps Script app.
 
-    var AuthModule = {
-      bind: function() {
-        Dom.loginButton.addEventListener("click", AuthModule.login);
-        Dom.logoutButton.addEventListener("click", AuthModule.logout);
-        Dom.monthSelect.addEventListener("change", AuthModule.handleMonthChange);
-      },
+    function performGatewayLogin() {
+      var userId = document.getElementById("userId").value.trim();
+      var password = document.getElementById("password").value.trim();
+      if (!userId || !password) {
+        alert("Please fill up credentials!");
+        return;
+      }
 
-      login: function() {
-        var userId = document.getElementById("userId").value.trim();
-        var password = document.getElementById("password").value.trim();
-
-        if (!userId || !password) {
-          AuthModule.showLoginMessage("TSM ID and password are required.");
-          return;
-        }
-
-        Dom.loginButton.disabled = true;
-        Dom.loginButton.textContent = "Authenticating...";
-        AuthModule.showLoginMessage("");
-
-        google.script.run
-          .withSuccessHandler(function(response) {
-            Dom.loginButton.disabled = false;
-            Dom.loginButton.textContent = "Login";
-
-            if (!response || !response.ok) {
-              AuthModule.showLoginMessage(response && response.message ? response.message : "Login failed.");
-              return;
-            }
-
-            AppState.sessionToken = response.sessionToken;
-            AppState.user = response.user;
-            AppState.monthOptions = response.monthOptions || [];
-            AppState.selectedMonth = response.defaultMonth || "";
-
-            AuthModule.populateMonths(AppState.monthOptions, AppState.selectedMonth);
-            AuthModule.showAppShell();
-
-            if (response.user.role === "tsm") {
-              MatrixModule.show(response.matrix);
-            } else {
-              AdminView.render(response.adminView);
-            }
-          })
-          .withFailureHandler(function(error) {
-            Dom.loginButton.disabled = false;
-            Dom.loginButton.textContent = "Login";
-            AuthModule.showLoginMessage(error && error.message ? error.message : String(error));
-          })
-          .login(userId, password);
-      },
-
-      logout: function() {
-        AppState.sessionToken = "";
-        AppState.user = null;
-        AppState.monthOptions = [];
-        AppState.selectedMonth = "";
-        AppState.matrix = null;
-        AppState.adminView = null;
-
-        Dom.appView.classList.add("hidden");
-        Dom.loginView.classList.remove("hidden");
-        Dom.tsmView.classList.add("hidden");
-        Dom.adminView.classList.add("hidden");
-        document.getElementById("userId").value = "";
-        document.getElementById("password").value = "";
-        AuthModule.showLoginMessage("");
-        SubmissionModule.showMessage("", "");
-      },
-
-      handleMonthChange: function() {
-        AppState.selectedMonth = Dom.monthSelect.value;
-        if (!AppState.user) {
-          return;
-        }
-
-        if (AppState.user.role === "tsm") {
-          MatrixModule.reload(AppState.selectedMonth);
-        } else {
-          AdminView.reload(AppState.selectedMonth);
-        }
-      },
-
-      showAppShell: function() {
-        Dom.loginView.classList.add("hidden");
-        Dom.appView.classList.remove("hidden");
-        Dom.appTitle.textContent = AppState.user.role === "tsm" ? "TSM Matrix Workspace" : "Admin Ledger Workspace";
-        Dom.appSubtitle.textContent = AppState.user.name + " (" + AppState.user.tsmId + ")" + (AppState.user.area ? " | " + AppState.user.area : "");
-      },
-
-      populateMonths: function(months, selectedMonth) {
-        Dom.monthSelect.innerHTML = "";
-        months.forEach(function(month) {
-          var option = document.createElement("option");
-          option.value = month;
-          option.textContent = month;
-          if (month === selectedMonth) {
-            option.selected = true;
+      setLoginState(true);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          setLoginState(false);
+          if (!res || !res.ok) {
+            alert(res && res.message ? res.message : "Login failed.");
+            return;
           }
-          Dom.monthSelect.appendChild(option);
-        });
-      },
 
-      showLoginMessage: function(message) {
-        Dom.loginMessage.textContent = message || "";
-        Dom.loginMessage.classList.toggle("hidden", !message);
+          sessionData.sessionToken = res.sessionToken;
+          sessionData.user = res.user;
+          sessionData.monthOptions = res.monthOptions || [];
+          document.getElementById("loginPage").classList.add("hidden");
+
+          if (res.user.role === "tsm") {
+            sessionData.matrixData = res.matrixData;
+            launchTsmDashboard(res.matrixData);
+          } else {
+            sessionData.adminData = res.adminData;
+            launchAdminDashboard(res.adminData);
+          }
+        })
+        .withFailureHandler(function(error) {
+          setLoginState(false);
+          alert(error && error.message ? error.message : String(error));
+        })
+        .login(userId, password);
+    }
+
+    function setLoginState(isLoading) {
+      var btn = document.getElementById("loginBtn");
+      btn.disabled = isLoading;
+      btn.innerText = isLoading ? "Routing System Gateway..." : "Verify & Access System";
+    }
+
+    function launchTsmDashboard(matrixData) {
+      sessionData.matrixData = matrixData;
+      sessionData.tsmState.draftPromptHandled = false;
+      document.getElementById("tsmDashboard").classList.remove("hidden");
+      document.getElementById("adminDashboard").classList.add("hidden");
+      document.getElementById("tsmWelcome").innerText = "TSM Portal: " + (sessionData.user.name || "TSM");
+      document.getElementById("tsmArea").innerText = "Area Coverage: " + (sessionData.user.area || "N/A");
+      populateMonthSelect("targetMonthSelect", sessionData.monthOptions, matrixData.month);
+      renderTsmSubmissionBadge(matrixData.alreadySubmitted);
+      if (matrixData.debugCounts && window.console && console.info) {
+        console.info("TSM Matrix Debug Counts", matrixData.debugCounts);
       }
-    };
+      initializeTsmState(matrixData);
+      renderTsmMatrix(matrixData);
+      loadSubmissionHistory(false);
+      startDraftAutosave();
+      handleOnlineStateChange();
+      maybePromptForDraftRestore();
+      maybePromptUnsyncedDraft();
+    }
 
-    var MatrixModule = {
-      show: function(matrixPayload) {
-        AppState.matrix = matrixPayload || { products: [], rows: [] };
-        Dom.adminView.classList.add("hidden");
-        Dom.tsmView.classList.remove("hidden");
-        MatrixModule.render();
-      },
+    function initializeTsmState(matrixData) {
+      var values = {};
+      matrixData.dealerColumns.forEach(function(dealer) {
+        var assignmentKey = dealer.assignmentKey || buildClientAssignmentKey(dealer.dealerCode, dealer.srName);
+        values[assignmentKey] = {};
+        matrixData.products.forEach(function(product) {
+          var existing = 0;
+          if (matrixData.previousEntries[assignmentKey] && matrixData.previousEntries[assignmentKey][product.productKey] !== undefined) {
+            existing = Number(matrixData.previousEntries[assignmentKey][product.productKey] || 0);
+          }
+          values[assignmentKey][product.productKey] = existing;
+        });
+      });
+      sessionData.tsmState.values = values;
+      setSaveStatus(matrixData.alreadySubmitted ? "Server version loaded. Ready to overwrite." : "Ready to edit", "idle");
+    }
 
-      reload: function(monthKey) {
-        SubmissionModule.showMessage("", "");
+    function populateMonthSelect(selectId, monthOptions, selectedMonth) {
+      var select = document.getElementById(selectId);
+      select.innerHTML = "";
+      var normalizedSelectedMonth = normalizeClientMonthKey(selectedMonth);
+      (monthOptions || []).forEach(function(month) {
+        var normalizedMonth = normalizeClientMonthKey(month);
+        var option = document.createElement("option");
+        option.value = normalizedMonth;
+        option.text = normalizedMonth === "ALL" ? "-- All Months --" : formatMonthLabel(normalizedMonth);
+        if (normalizedMonth === normalizedSelectedMonth) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    }
 
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (!response || !response.ok) {
-              SubmissionModule.showMessage(response && response.message ? response.message : "Unable to load matrix.", "error");
-              return;
+    function reloadTsmMatrix(monthKey) {
+      persistDraftToLocal(false);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            alert(res && res.message ? res.message : "Unable to load matrix.");
+            return;
+          }
+          launchTsmDashboard(res.matrixData);
+        })
+        .withFailureHandler(function(error) {
+          alert(error && error.message ? error.message : String(error));
+        })
+        .getTsmMatrixData(sessionData.sessionToken, monthKey);
+    }
+
+    function renderTsmSubmissionBadge(alreadySubmitted) {
+      var badge = document.getElementById("submissionStatusBadge");
+      var btn = document.getElementById("submitBtn");
+      badge.classList.remove("hidden");
+      if (alreadySubmitted) {
+        badge.innerText = "Submitted";
+        badge.className = "text-[11px] px-2.5 py-1 rounded-full font-bold uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30";
+        btn.innerText = "Overwrite Monthly Targets";
+      } else {
+        badge.innerText = "Not Submitted";
+        badge.className = "text-[11px] px-2.5 py-1 rounded-full font-bold uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30";
+        btn.innerText = "Submit Targets";
+      }
+    }
+
+    function renderTsmMatrix(matrixData) {
+      renderDesktopMatrix(matrixData);
+      calculateTsmLiveGrandTotals();
+    }
+
+    function renderDesktopMatrix(matrixData) {
+      var dealerRow = document.getElementById("dealerRow");
+      var srRow = document.getElementById("srRow");
+      var territoryRow = document.getElementById("territoryRow");
+      var footer = document.getElementById("matrixFooter");
+      var tbody = document.getElementById("matrixBody");
+
+      dealerRow.innerHTML = '<th class="sticky-col matrix-product-cell">Dealer Code / Name</th>';
+      srRow.innerHTML = '<th class="sticky-col matrix-product-cell">SR Name</th>';
+      territoryRow.innerHTML = '<th class="sticky-col text-slate-400 matrix-product-cell">Product List Matrix</th>';
+      footer.innerHTML = '<tr class="border-t-2 border-slate-700"><td class="sticky-col text-left font-bold text-teal-400 bg-[#1f2937] matrix-product-cell">Dealer Target (Ctn)</td></tr>';
+      tbody.innerHTML = "";
+
+      var footerRow = footer.getElementsByTagName("tr")[0];
+      matrixData.dealerColumns.forEach(function(dealer, index) {
+        dealerRow.insertAdjacentHTML("beforeend", '<th class="text-sm font-bold bg-teal-950/20 text-teal-400 border-l border-slate-800"><span class="dealer-header-code">' + escapeHtml(dealer.dealerCode) + "</span><span class='dealer-header-name'>" + escapeHtml(dealer.dealerName) + "</span></th>");
+        srRow.insertAdjacentHTML("beforeend", '<th class="text-xs font-semibold text-slate-200 border-l border-slate-800">' + escapeHtml(dealer.srName) + "</th>");
+        territoryRow.insertAdjacentHTML("beforeend", '<th class="text-xs text-slate-400 font-mono border-l border-slate-800">' + escapeHtml(dealer.territory) + "</th>");
+        footerRow.insertAdjacentHTML("beforeend", '<td id="dealerTarget-' + index + '" class="text-right font-black text-teal-400 font-mono border-l border-slate-800 px-3">0.00</td>');
+      });
+
+      matrixData.products.forEach(function(product, productIndex) {
+        var rowHtml = '<tr><td class="sticky-col text-left font-semibold text-slate-200 text-xs matrix-product-cell"><span class="matrix-product-label"><span class="matrix-product-name">' + escapeHtml(product.productName) + '</span><span class="matrix-product-size">(' + escapeHtml(product.size || "") + ')</span></span></td>';
+        matrixData.dealerColumns.forEach(function(dealer, dealerIndex) {
+          var assignmentKey = dealer.assignmentKey || buildClientAssignmentKey(dealer.dealerCode, dealer.srName);
+          var value = getDraftValue(assignmentKey, product.productKey);
+          rowHtml += '<td class="border-l border-slate-800/50"><input type="number" inputmode="numeric" step="any" min="0" value="' + escapeAttr(value > 0 ? value : "") + '" data-product-key="' + escapeAttr(product.productKey) + '" data-dealer-index="' + dealerIndex + '" data-assignment-key="' + escapeAttr(assignmentKey) + '" class="matrix-input row-prod-' + productIndex + '" oninput="handleTargetInput(event)"></td>';
+        });
+        rowHtml += '<td id="rowTotalQty-' + productIndex + '" class="sr-total-cell">0.00</td></tr>';
+        tbody.insertAdjacentHTML("beforeend", rowHtml);
+      });
+
+      syncDesktopMatrixScrollbar();
+    }
+
+    function handleTargetInput(event) {
+      var input = event.target;
+      var assignmentKey = input.getAttribute("data-assignment-key");
+      var productKey = input.getAttribute("data-product-key");
+      var value = parseFloat(input.value);
+      value = isNaN(value) || value < 0 ? 0 : value;
+      sessionData.tsmState.values[assignmentKey][productKey] = value;
+      syncInputMirrors(assignmentKey, productKey, value, input);
+      calculateTsmLiveGrandTotals();
+      setSaveStatus(navigator.onLine ? "Editing... draft pending local save" : "Offline draft mode", navigator.onLine ? "dirty" : "offline");
+    }
+
+    function syncInputMirrors(assignmentKey, productKey, value, sourceInput) {
+      var inputs = document.querySelectorAll("[data-assignment-key][data-product-key]");
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i] === sourceInput) {
+          continue;
+        }
+        if (inputs[i].getAttribute("data-assignment-key") === assignmentKey && inputs[i].getAttribute("data-product-key") === productKey) {
+          inputs[i].value = value > 0 ? value : "";
+        }
+      }
+    }
+
+    function calculateTsmLiveGrandTotals() {
+      if (!sessionData.matrixData) {
+        return;
+      }
+
+      var dealerTotals = [];
+      var productTotals = [];
+      var grandTotal = 0;
+
+      sessionData.matrixData.dealerColumns.forEach(function(dealer, dealerIndex) {
+        var assignmentKey = dealer.assignmentKey || buildClientAssignmentKey(dealer.dealerCode, dealer.srName);
+        var dealerTotal = 0;
+        sessionData.matrixData.products.forEach(function(product) {
+          dealerTotal += getDraftValue(assignmentKey, product.productKey);
+        });
+        dealerTotals[dealerIndex] = dealerTotal;
+        grandTotal += dealerTotal;
+        var desktopDealerCell = document.getElementById("dealerTarget-" + dealerIndex);
+        if (desktopDealerCell) {
+          desktopDealerCell.innerText = dealerTotal.toFixed(2);
+        }
+      });
+
+      sessionData.matrixData.products.forEach(function(product, productIndex) {
+        var rowTotal = 0;
+        sessionData.matrixData.dealerColumns.forEach(function(dealer) {
+          rowTotal += getDraftValue(dealer.assignmentKey || buildClientAssignmentKey(dealer.dealerCode, dealer.srName), product.productKey);
+        });
+        productTotals[productIndex] = rowTotal;
+        var rowCell = document.getElementById("rowTotalQty-" + productIndex);
+        if (rowCell) {
+          rowCell.innerText = rowTotal.toFixed(2);
+        }
+      });
+
+      document.getElementById("stickyGrandTotal").innerText = grandTotal.toFixed(2) + " Ctn";
+    }
+
+    function getDraftValue(assignmentKey, productKey) {
+      if (!sessionData.tsmState.values[assignmentKey]) {
+        return 0;
+      }
+      return Number(sessionData.tsmState.values[assignmentKey][productKey] || 0);
+    }
+
+    function syncDesktopMatrixScrollbar() {
+      var tableWrapper = document.getElementById("mainTableWrapper");
+      var scrollbar = document.getElementById("desktopBottomScrollbar");
+      var inner = document.getElementById("desktopBottomScrollbarInner");
+      if (!tableWrapper || !scrollbar || !inner) {
+        return;
+      }
+
+      inner.style.width = tableWrapper.scrollWidth + "px";
+      scrollbar.style.display = window.innerWidth >= 768 && tableWrapper.scrollWidth > tableWrapper.clientWidth ? "block" : "none";
+
+      if (scrollbar.dataset.bound === "true") {
+        return;
+      }
+
+      var syncingFromTable = false;
+      var syncingFromBar = false;
+
+      tableWrapper.addEventListener("scroll", function() {
+        if (syncingFromBar) {
+          return;
+        }
+        syncingFromTable = true;
+        scrollbar.scrollLeft = tableWrapper.scrollLeft;
+        syncingFromTable = false;
+      });
+
+      scrollbar.addEventListener("scroll", function() {
+        if (syncingFromTable) {
+          return;
+        }
+        syncingFromBar = true;
+        tableWrapper.scrollLeft = scrollbar.scrollLeft;
+        syncingFromBar = false;
+      });
+
+      scrollbar.dataset.bound = "true";
+    }
+
+    function startDraftAutosave() {
+      if (sessionData.tsmState.autosaveTimer) {
+        clearInterval(sessionData.tsmState.autosaveTimer);
+      }
+      sessionData.tsmState.autosaveTimer = setInterval(function() {
+        persistDraftToLocal(false);
+      }, 30000);
+    }
+
+    function getCurrentDraftStorageKey() {
+      var month = sessionData.matrixData ? sessionData.matrixData.month : document.getElementById("targetMonthSelect").value;
+      return "ptcpi-draft:" + (sessionData.user ? sessionData.user.tsmId : "guest") + ":" + month;
+    }
+
+    function buildDraftPayload(status) {
+      return {
+        tsmId: sessionData.user ? sessionData.user.tsmId : "",
+        month: sessionData.matrixData ? sessionData.matrixData.month : "",
+        values: sessionData.tsmState.values,
+        status: status || sessionData.tsmState.statusMode || "draft",
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function persistDraftToLocal(markUnsynced) {
+      if (!sessionData.user || sessionData.user.role !== "tsm" || !sessionData.matrixData) {
+        return;
+      }
+
+      var payload = buildDraftPayload(markUnsynced ? "unsynced" : (navigator.onLine ? "draft" : "offline"));
+      localStorage.setItem(getCurrentDraftStorageKey(), JSON.stringify(payload));
+      if (markUnsynced) {
+        setSaveStatus("Unsynced draft saved locally", "unsynced");
+      } else if (navigator.onLine) {
+        setSaveStatus("Draft saved locally at " + formatShortTime(new Date(payload.updatedAt)), "saved");
+      } else {
+        setSaveStatus("Offline draft saved on device", "offline");
+      }
+    }
+
+    function maybePromptForDraftRestore() {
+      if (sessionData.tsmState.draftPromptHandled) {
+        return;
+      }
+
+      var raw = localStorage.getItem(getCurrentDraftStorageKey());
+      if (!raw) {
+        return;
+      }
+
+      sessionData.tsmState.draftPromptHandled = true;
+      showDraftPrompt({
+        title: "Draft Found. Restore Previous Entry?",
+        message: "A local draft was found for " + formatMonthLabel(sessionData.matrixData.month) + ".",
+        primaryLabel: "Restore",
+        secondaryLabel: "Discard",
+        primaryAction: function() {
+          restoreDraftFromStorage(raw);
+          closeDraftPrompt();
+        },
+        secondaryAction: function() {
+          localStorage.removeItem(getCurrentDraftStorageKey());
+          setSaveStatus("Local draft discarded", "idle");
+          closeDraftPrompt();
+        }
+      });
+    }
+
+    function restoreDraftFromStorage(rawDraft) {
+      try {
+        var parsed = JSON.parse(rawDraft);
+        if (parsed && parsed.values) {
+          sessionData.tsmState.values = parsed.values;
+          renderTsmMatrix(sessionData.matrixData);
+          setSaveStatus("Draft restored from this device", "saved");
+        }
+      } catch (error) {}
+    }
+
+    function maybePromptUnsyncedDraft() {
+      if (sessionData.tsmState.pendingDraftPrompt) {
+        return;
+      }
+      var raw = localStorage.getItem(getCurrentDraftStorageKey());
+      if (!raw) {
+        return;
+      }
+      try {
+        var parsed = JSON.parse(raw);
+        if (parsed.status === "unsynced" && navigator.onLine) {
+          showDraftPrompt({
+            title: "Unsynced Draft Found",
+            message: "A locally saved draft is ready to sync now that your connection is back.",
+            primaryLabel: "Sync Now",
+            secondaryLabel: "Continue Editing",
+            primaryAction: function() {
+              closeDraftPrompt();
+              submitTsmMatrix(true);
+            },
+            secondaryAction: function() {
+              closeDraftPrompt();
+              setSaveStatus("Unsynced draft kept for editing", "unsynced");
             }
-
-            MatrixModule.show(response.matrix);
-          })
-          .withFailureHandler(function(error) {
-            SubmissionModule.showMessage(error && error.message ? error.message : String(error), "error");
-          })
-          .getTsmMatrixData(AppState.sessionToken, monthKey);
-      },
-
-      render: function() {
-        var matrix = AppState.matrix || { products: [], rows: [] };
-        var products = matrix.products || [];
-        var rows = matrix.rows || [];
-
-        document.getElementById("dealerRowCount").textContent = rows.length;
-        document.getElementById("productCount").textContent = products.length;
-
-        var headerTop = [
-          '<tr>',
-          '<th class="sticky-col text-left" rowspan="2">Dealer Code</th>',
-          '<th class="text-left" rowspan="2">Dealer Name</th>',
-          '<th class="text-left" rowspan="2">SR Name</th>',
-          '<th class="text-left" rowspan="2">Territory</th>'
-        ];
-
-        products.forEach(function(product) {
-          headerTop.push('<th class="text-center">' + MatrixModule.escape(product.productName) + '</th>');
-        });
-        headerTop.push('<th class="text-right" rowspan="2">Dealer Target</th>');
-        headerTop.push('</tr>');
-
-        var headerBottom = ['<tr>'];
-        products.forEach(function(product) {
-          headerBottom.push('<th class="text-center text-xs text-sky-200/80">' + MatrixModule.escape(product.size || "") + '</th>');
-        });
-        headerBottom.push('</tr>');
-
-        Dom.matrixHead.innerHTML = headerTop.join("") + headerBottom.join("");
-
-        var bodyHtml = [];
-        rows.forEach(function(row, rowIndex) {
-          bodyHtml.push('<tr data-row-index="' + rowIndex + '">');
-          bodyHtml.push('<td class="sticky-col text-left font-bold">' + MatrixModule.escape(row.dealerCode) + '</td>');
-          bodyHtml.push('<td class="text-left">' + MatrixModule.escape(row.dealerName) + '</td>');
-          bodyHtml.push('<td class="text-left">' + MatrixModule.escape(row.srName) + '</td>');
-          bodyHtml.push('<td class="text-left">' + MatrixModule.escape(row.territory) + '</td>');
-
-          products.forEach(function(product) {
-            var value = row.productQuantities && row.productQuantities[product.productKey] ? row.productQuantities[product.productKey] : "";
-            bodyHtml.push(
-              '<td>' +
-                '<input class="input-cell matrix-input" type="number" min="0" step="any"' +
-                ' data-row-index="' + rowIndex + '"' +
-                ' data-product-key="' + MatrixModule.escapeAttr(product.productKey) + '"' +
-                ' value="' + MatrixModule.escapeAttr(value) + '">' +
-              '</td>'
-            );
           });
-
-          bodyHtml.push('<td class="text-right font-black text-emerald-300" id="row-total-' + rowIndex + '">' + Number(row.dealerTarget || 0).toFixed(2) + '</td>');
-          bodyHtml.push('</tr>');
-        });
-
-        Dom.matrixBody.innerHTML = bodyHtml.join("");
-        MatrixModule.bindInputs();
-        MatrixModule.refreshTotals();
-      },
-
-      bindInputs: function() {
-        var inputs = document.querySelectorAll(".matrix-input");
-        inputs.forEach(function(input) {
-          input.addEventListener("input", MatrixModule.handleInputChange);
-        });
-      },
-
-      handleInputChange: function(event) {
-        var rowIndex = Number(event.target.getAttribute("data-row-index"));
-        var productKey = event.target.getAttribute("data-product-key");
-        var value = Number(event.target.value || 0);
-
-        if (!AppState.matrix || !AppState.matrix.rows[rowIndex]) {
-          return;
         }
+      } catch (error) {}
+    }
 
-        AppState.matrix.rows[rowIndex].productQuantities[productKey] = value;
-        MatrixModule.updateRowTotal(rowIndex);
-        MatrixModule.refreshTotals();
-      },
+    function showDraftPrompt(config) {
+      sessionData.tsmState.pendingDraftPrompt = config;
+      document.getElementById("draftPromptTitle").innerText = config.title;
+      document.getElementById("draftPromptMessage").innerText = config.message;
+      document.getElementById("draftPromptPrimary").innerText = config.primaryLabel;
+      document.getElementById("draftPromptSecondary").innerText = config.secondaryLabel;
+      document.getElementById("draftPromptModal").classList.remove("hidden");
+      document.getElementById("draftPromptModal").classList.add("flex");
+    }
 
-      updateRowTotal: function(rowIndex) {
-        var row = AppState.matrix.rows[rowIndex];
-        var total = 0;
-        Object.keys(row.productQuantities).forEach(function(key) {
-          total += Number(row.productQuantities[key] || 0);
-        });
-        row.dealerTarget = total;
-        var totalCell = document.getElementById("row-total-" + rowIndex);
-        if (totalCell) {
-          totalCell.textContent = total.toFixed(2);
-        }
-      },
+    function closeDraftPrompt() {
+      document.getElementById("draftPromptModal").classList.add("hidden");
+      document.getElementById("draftPromptModal").classList.remove("flex");
+      sessionData.tsmState.pendingDraftPrompt = null;
+    }
 
-      refreshTotals: function() {
-        var grandTotal = 0;
-        (AppState.matrix.rows || []).forEach(function(row, rowIndex) {
-          MatrixModule.updateRowTotal(rowIndex);
-          grandTotal += Number(row.dealerTarget || 0);
-        });
-        document.getElementById("grandTarget").textContent = grandTotal.toFixed(2);
-      },
-
-      collectPayloadRows: function() {
-        return (AppState.matrix.rows || []).map(function(row) {
-          return {
-            dealerCode: row.dealerCode,
-            dealerName: row.dealerName,
-            srName: row.srName,
-            territory: row.territory,
-            quantities: row.productQuantities || {}
-          };
-        });
-      },
-
-      escape: function(value) {
-        return String(value === undefined || value === null ? "" : value)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      },
-
-      escapeAttr: function(value) {
-        return MatrixModule.escape(value);
+    function handleDraftPrimaryAction() {
+      if (sessionData.tsmState.pendingDraftPrompt && sessionData.tsmState.pendingDraftPrompt.primaryAction) {
+        sessionData.tsmState.pendingDraftPrompt.primaryAction();
       }
-    };
+    }
 
-    var SubmissionModule = {
-      bind: function() {
-        document.getElementById("submitButton").addEventListener("click", SubmissionModule.submit);
-      },
+    function handleDraftSecondaryAction() {
+      if (sessionData.tsmState.pendingDraftPrompt && sessionData.tsmState.pendingDraftPrompt.secondaryAction) {
+        sessionData.tsmState.pendingDraftPrompt.secondaryAction();
+      }
+    }
 
-      submit: function() {
-        if (!AppState.matrix) {
-          return;
+    function handleOnlineStateChange() {
+      var banner = document.getElementById("networkBanner");
+      if (!navigator.onLine) {
+        banner.classList.remove("hidden");
+        setSaveStatus("Offline draft mode", "offline");
+      } else {
+        banner.classList.add("hidden");
+        if (sessionData.user && sessionData.user.role === "tsm") {
+          maybePromptUnsyncedDraft();
         }
+      }
+    }
 
-        var payload = {
-          month: AppState.selectedMonth,
-          rows: MatrixModule.collectPayloadRows()
+    function setSaveStatus(text, mode) {
+      sessionData.tsmState.status = text;
+      sessionData.tsmState.statusMode = mode;
+      document.getElementById("saveStatusText").innerText = text;
+    }
+
+    function collectTsmSubmissionPayload() {
+      return (sessionData.matrixData.dealerColumns || []).map(function(dealer) {
+        var assignmentKey = dealer.assignmentKey || buildClientAssignmentKey(dealer.dealerCode, dealer.srName);
+        return {
+          assignmentKey: assignmentKey,
+          dealerCode: dealer.dealerCode,
+          dealerName: dealer.dealerName,
+          srName: dealer.srName,
+          territory: dealer.territory,
+          quantities: cloneObject(sessionData.tsmState.values[assignmentKey] || {})
         };
+      });
+    }
 
-        var button = document.getElementById("submitButton");
-        button.disabled = true;
-        button.textContent = "Saving...";
-        SubmissionModule.showMessage("", "");
+    function buildSubmissionReviewSummary() {
+      var payload = collectTsmSubmissionPayload();
+      var totalTargetQty = 0;
 
-        google.script.run
-          .withSuccessHandler(function(response) {
-            button.disabled = false;
-            button.textContent = "Save Monthly Targets";
+      payload.forEach(function(dealer) {
+        Object.keys(dealer.quantities || {}).forEach(function(productKey) {
+          totalTargetQty += Number(dealer.quantities[productKey] || 0);
+        });
+      });
 
-            if (!response || !response.ok) {
-              SubmissionModule.showMessage(response && response.message ? response.message : "Save failed.", "error");
-              return;
+      return {
+        month: document.getElementById("targetMonthSelect").value,
+        tsmName: sessionData.user ? sessionData.user.name : "",
+        area: sessionData.user ? sessionData.user.area : "",
+        totalDealers: payload.length,
+        totalTargetQty: totalTargetQty,
+        dealers: payload
+      };
+    }
+
+    function submitTsmMatrix(isSyncAttempt) {
+      if (!sessionData.matrixData) {
+        return;
+      }
+
+      if (!navigator.onLine) {
+        persistDraftToLocal(true);
+        showDraftPrompt({
+          title: "Unsynced Draft Found",
+          message: "You are offline. The latest draft is stored on this device.",
+          primaryLabel: "Sync Now",
+          secondaryLabel: "Continue Editing",
+          primaryAction: function() {
+            closeDraftPrompt();
+          },
+          secondaryAction: function() {
+            closeDraftPrompt();
+          }
+        });
+        return;
+      }
+
+      if (!isSyncAttempt) {
+        openSubmissionReviewModal(buildSubmissionReviewSummary());
+        return;
+      }
+
+      executeSubmission(buildSubmissionReviewSummary(), true);
+    }
+
+    function executeSubmission(reviewSummary, isSyncAttempt) {
+      var summary = reviewSummary || buildSubmissionReviewSummary();
+      var submitBtn = document.getElementById("submitBtn");
+      var preparedReportWindow = isSyncAttempt ? null : openReportShellWindow("Preparing submission preview...");
+      submitBtn.disabled = true;
+      submitBtn.innerText = isSyncAttempt ? "Syncing Draft..." : "Syncing Matrix Cloud...";
+      setSaveStatus(isSyncAttempt ? "Syncing unsynced draft..." : "Submitting to cloud...", "syncing");
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          submitBtn.disabled = false;
+          if (!res || !res.ok) {
+            closeReportShellWindow(preparedReportWindow);
+            submitBtn.innerText = "Submit Targets";
+            persistDraftToLocal(true);
+            setSaveStatus("Sync failed. Draft kept locally.", "unsynced");
+            alert(res && res.message ? res.message : "Save failed.");
+            return;
+          }
+
+          sessionData.lastSubmission = res.summary;
+          localStorage.removeItem(getCurrentDraftStorageKey());
+          setSaveStatus("Cloud sync complete", "synced");
+          submitBtn.innerText = "Overwrite Monthly Targets";
+          showSubmissionSuccessModal(res.summary);
+          openSubmissionReport(res.summary, { reportWindow: preparedReportWindow, autoPrint: false, pdfMode: false });
+          loadSubmissionHistory(false);
+          reloadTsmMatrix(res.summary.month);
+        })
+        .withFailureHandler(function(error) {
+          closeReportShellWindow(preparedReportWindow);
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Submit Targets";
+          persistDraftToLocal(true);
+          setSaveStatus("Network issue. Draft saved locally.", "unsynced");
+          alert(error && error.message ? error.message : String(error));
+        })
+        .saveMonthlyTargets(sessionData.sessionToken, JSON.stringify({
+          month: summary.month,
+          dealers: summary.dealers
+        }));
+    }
+
+    function openSubmissionReviewModal(reviewSummary) {
+      sessionData.pendingSubmissionPayload = reviewSummary;
+      document.getElementById("reviewMonth").innerText = formatMonthLabel(reviewSummary.month);
+      document.getElementById("reviewTsm").innerText = reviewSummary.tsmName;
+      document.getElementById("reviewDealers").innerText = reviewSummary.totalDealers;
+      document.getElementById("reviewTargetQty").innerText = Number(reviewSummary.totalTargetQty || 0).toFixed(2) + " Ctn";
+      document.getElementById("submissionReviewModal").classList.remove("hidden");
+      document.getElementById("submissionReviewModal").classList.add("flex");
+    }
+
+    function closeSubmissionReviewModal() {
+      document.getElementById("submissionReviewModal").classList.add("hidden");
+      document.getElementById("submissionReviewModal").classList.remove("flex");
+    }
+
+    function confirmSubmissionFromReview() {
+      var payload = sessionData.pendingSubmissionPayload || buildSubmissionReviewSummary();
+      closeSubmissionReviewModal();
+      executeSubmission(payload, false);
+    }
+
+    function showSubmissionSuccessModal(summary) {
+      document.getElementById("successMonth").innerText = formatMonthLabel(summary.month);
+      document.getElementById("successTsm").innerText = summary.tsmName;
+      document.getElementById("successArea").innerText = summary.area || (sessionData.user ? sessionData.user.area : "");
+      document.getElementById("successDealers").innerText = summary.totalDealersSubmitted;
+      document.getElementById("successTargetQty").innerText = Number(summary.totalTargetQty || 0).toFixed(2) + " Ctn";
+      document.getElementById("successReference").innerText = summary.referenceNumber;
+      document.getElementById("successSubmittedAt").innerText = summary.submittedAt;
+      document.getElementById("submissionSuccessModal").classList.remove("hidden");
+      document.getElementById("submissionSuccessModal").classList.add("flex");
+    }
+
+    function closeSubmissionSuccessModal() {
+      document.getElementById("submissionSuccessModal").classList.add("hidden");
+      document.getElementById("submissionSuccessModal").classList.remove("flex");
+    }
+
+    function viewLatestSubmission() {
+      if (!sessionData.lastSubmission) {
+        return;
+      }
+      openSubmissionReport(sessionData.lastSubmission, { autoPrint: false, pdfMode: false });
+    }
+
+    function printSubmissionDocument() {
+      if (!sessionData.lastSubmission) {
+        return;
+      }
+      openSubmissionReport(sessionData.lastSubmission, { autoPrint: true, pdfMode: false });
+    }
+
+    function downloadSubmissionPdf() {
+      if (!sessionData.lastSubmission) {
+        return;
+      }
+      openSubmissionReport(sessionData.lastSubmission, { autoPrint: true, pdfMode: true });
+    }
+
+    function loadSubmissionHistory(isManualRefresh) {
+      if (!sessionData.user || sessionData.user.role !== "tsm") {
+        return;
+      }
+
+      var body = document.getElementById("submissionHistoryBody");
+      if (body && (!sessionData.submissionHistory.length || isManualRefresh)) {
+        body.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-400 text-left">Loading submission history...</td></tr>';
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            if (body) {
+              body.innerHTML = '<tr><td colspan="6" class="p-4 text-rose-300 text-left">' + escapeHtml(res && res.message ? res.message : "Unable to load submission history.") + '</td></tr>';
             }
+            return;
+          }
 
-            SubmissionModule.showMessage(response.message, "success");
-            MatrixModule.reload(AppState.selectedMonth);
-          })
-          .withFailureHandler(function(error) {
-            button.disabled = false;
-            button.textContent = "Save Monthly Targets";
-            SubmissionModule.showMessage(error && error.message ? error.message : String(error), "error");
-          })
-          .saveMonthlyTargets(AppState.sessionToken, JSON.stringify(payload));
-      },
+          sessionData.submissionHistory = res.history || [];
+          renderSubmissionHistory();
+        })
+        .withFailureHandler(function(error) {
+          if (body) {
+            body.innerHTML = '<tr><td colspan="6" class="p-4 text-rose-300 text-left">' + escapeHtml(error && error.message ? error.message : String(error)) + '</td></tr>';
+          }
+        })
+        .getSubmissionHistory(sessionData.sessionToken);
+    }
 
-      showMessage: function(message, type) {
-        var el = Dom.submissionMessage;
-        el.textContent = message || "";
-        el.className = "mb-4 rounded-2xl border px-4 py-3 text-sm";
+    function openSubmissionHistoryModal() {
+      loadSubmissionHistory(false);
+      document.getElementById("submissionHistoryModal").classList.remove("hidden");
+      document.getElementById("submissionHistoryModal").classList.add("flex");
+    }
 
-        if (!message) {
-          el.classList.add("hidden");
+    function closeSubmissionHistoryModal() {
+      document.getElementById("submissionHistoryModal").classList.add("hidden");
+      document.getElementById("submissionHistoryModal").classList.remove("flex");
+    }
+
+    function renderSubmissionHistory() {
+      var body = document.getElementById("submissionHistoryBody");
+      if (!body) {
+        return;
+      }
+
+      body.innerHTML = "";
+      if (!sessionData.submissionHistory.length) {
+        body.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-400 text-left">No previous submissions found.</td></tr>';
+        return;
+      }
+
+      sessionData.submissionHistory.forEach(function(item) {
+        body.insertAdjacentHTML("beforeend",
+          '<tr class="hover:bg-slate-800/30">' +
+            '<td class="p-4 font-semibold text-slate-100">' + escapeHtml(formatMonthLabel(item.month)) + '</td>' +
+            '<td class="p-4 font-mono text-emerald-300">' + escapeHtml(item.referenceNumber) + '</td>' +
+            '<td class="p-4 text-slate-300">' + escapeHtml(item.submittedAt || "Not Available") + '</td>' +
+            '<td class="p-4 text-right font-mono text-slate-200">' + Number(item.totalDealers || 0) + '</td>' +
+            '<td class="p-4 text-right font-mono text-teal-300">' + Number(item.totalTargetQty || 0).toFixed(2) + '</td>' +
+            '<td class="p-4 text-center">' +
+              '<div class="flex flex-wrap items-center justify-center gap-2">' +
+                '<button type="button" onclick="viewSubmissionHistoryReport(\'' + escapeAttr(item.month) + '\')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] px-3 py-1.5 rounded-lg border border-slate-700 transition">View</button>' +
+                '<button type="button" onclick="editSubmissionHistoryRecord(\'' + escapeAttr(item.month) + '\')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] px-3 py-1.5 rounded-lg border border-amber-300/50 transition">Edit</button>' +
+                '<button type="button" onclick="printSubmissionHistoryReport(\'' + escapeAttr(item.month) + '\')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg border border-emerald-500 transition">Print</button>' +
+                '<button type="button" onclick="downloadSubmissionHistoryPdf(\'' + escapeAttr(item.month) + '\')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg border border-indigo-500 transition">Download PDF</button>' +
+              '</div>' +
+            '</td>' +
+          '</tr>'
+        );
+      });
+
+    }
+
+    function viewSubmissionHistoryReport(monthKey) {
+      openSubmissionReport({ month: monthKey }, { autoPrint: false, pdfMode: false });
+    }
+
+    function printSubmissionHistoryReport(monthKey) {
+      openSubmissionReport({ month: monthKey }, { autoPrint: true, pdfMode: false });
+    }
+
+    function downloadSubmissionHistoryPdf(monthKey) {
+      openSubmissionReport({ month: monthKey }, { autoPrint: true, pdfMode: true });
+    }
+
+    function editSubmissionHistoryRecord(monthKey) {
+      closeSubmissionHistoryModal();
+      closeSubmissionSuccessModal();
+      var select = document.getElementById("targetMonthSelect");
+      var normalizedMonth = normalizeClientMonthKey(monthKey);
+      if (select && optionExists(select, normalizedMonth)) {
+        select.value = normalizedMonth;
+      }
+      reloadTsmMatrix(normalizedMonth);
+      scrollToTsmSection("tsmTopPanel");
+      setSaveStatus("Loaded previously submitted month. You can edit and overwrite this submission.", "idle");
+    }
+
+    function openSubmissionReport(context, options) {
+      var reportOptions = options || {};
+      var reportWindow = reportOptions.reportWindow || openReportShellWindow(reportOptions.pdfMode ? "Preparing PDF-ready report..." : "Preparing submission report...");
+      var requestPayload = Object.assign({}, context || {}, {
+        autoPrint: !!reportOptions.autoPrint,
+        pdfMode: !!reportOptions.pdfMode
+      });
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            closeReportShellWindow(reportWindow);
+            alert(res && res.message ? res.message : "Unable to prepare submission report.");
+            return;
+          }
+
+          writeReportWindow(reportWindow, res.html);
+        })
+        .withFailureHandler(function(error) {
+          closeReportShellWindow(reportWindow);
+          alert(error && error.message ? error.message : String(error));
+        })
+        .getSubmissionReportHtml(sessionData.sessionToken, JSON.stringify(requestPayload));
+    }
+
+    function openReportShellWindow(message) {
+      var reportWindow = window.open("", "_blank");
+      if (!reportWindow) {
+        return null;
+      }
+
+      reportWindow.document.open();
+      reportWindow.document.write(
+        '<!doctype html><html><head><title>Preparing Report</title><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<style>body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;} .card{max-width:520px;width:100%;background:#111827;border:1px solid #334155;border-radius:18px;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.45);} h1{margin:0 0 8px;font-size:18px;color:#5eead4;} p{margin:0;color:#94a3b8;font-size:13px;line-height:1.6;}</style></head><body><div class="card"><h1>Submission Report</h1><p>' + escapeHtml(message || "Preparing report...") + '</p></div></body></html>'
+      );
+      reportWindow.document.close();
+      return reportWindow;
+    }
+
+    function writeReportWindow(reportWindow, html) {
+      if (!reportWindow) {
+        reportWindow = window.open("", "_blank");
+      }
+      if (!reportWindow) {
+        alert("Please allow pop-ups to open the submission report.");
+        return;
+      }
+
+      reportWindow.document.open();
+      reportWindow.document.write(html);
+      reportWindow.document.close();
+    }
+
+    function closeReportShellWindow(reportWindow) {
+      if (reportWindow && !reportWindow.closed) {
+        reportWindow.close();
+      }
+    }
+
+    function scrollToTsmSection(sectionId) {
+      var target = document.getElementById(sectionId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function promptInstallApp() {
+      if (!sessionData.installPromptEvent) {
+        return;
+      }
+      sessionData.installPromptEvent.prompt();
+      sessionData.installPromptEvent.userChoice.finally(function() {
+        sessionData.installPromptEvent = null;
+        toggleInstallButtons(false);
+      });
+    }
+
+    function toggleInstallButtons(show) {
+      document.getElementById("installPromptRow").classList.toggle("hidden", !show);
+      document.getElementById("stickyInstallBtn").classList.toggle("hidden", !show);
+    }
+
+    function launchAdminDashboard(adminData) {
+      sessionData.adminData = adminData;
+      document.getElementById("tsmDashboard").classList.add("hidden");
+      document.getElementById("adminDashboard").classList.remove("hidden");
+      document.getElementById("adminWelcome").innerText = "Welcome, " + (sessionData.user.name || "Admin");
+      buildAllFiltersInitial();
+      applyAdminCascadingFilters();
+    }
+
+    function buildAllFiltersInitial() {
+      populateMonthSelect("filterMonth", ["ALL"].concat(sessionData.adminData.availableMonths || []), sessionData.adminData.selectedMonth || "ALL");
+      populateProductFilter();
+      syncAdminFilterOptions();
+    }
+
+    function populateProductFilter() {
+      var select = document.getElementById("filterProduct");
+      var previousValue = select.value || "ALL";
+      select.innerHTML = '<option value="ALL">-- Matrix Pure Qty Mode --</option>';
+      (sessionData.adminData.products || []).forEach(function(product) {
+        select.insertAdjacentHTML("beforeend", '<option value="' + escapeAttr(product.productKey) + '">' + escapeHtml(product.productName) + " (" + escapeHtml(product.size || "") + ")</option>");
+      });
+      select.value = optionExists(select, previousValue) ? previousValue : "ALL";
+    }
+
+    function populateRsmFilter(monthValue, previousValue) {
+      var rsms = {};
+      var select = document.getElementById("filterRsm");
+      select.innerHTML = '<option value="ALL">-- All RSMs --</option>';
+      (sessionData.adminData.rawEntries || []).forEach(function(entry) {
+        if ((monthValue === "ALL" || entry.month === monthValue) && entry.rsmName) {
+          rsms[entry.rsmName] = true;
+        }
+      });
+      Object.keys(rsms).sort().forEach(function(rsm) {
+        select.insertAdjacentHTML("beforeend", '<option value="' + escapeAttr(rsm) + '">' + escapeHtml(rsm) + "</option>");
+      });
+      select.value = optionExists(select, previousValue) ? previousValue : "ALL";
+    }
+
+    function onRsmFilterChange() {
+      applyAdminCascadingFilters();
+    }
+
+    function onTsmFilterChange() {
+      applyAdminCascadingFilters();
+    }
+
+    function updateTsmDropdown(monthValue, selectedRsm, previousValue) {
+      var tsms = {};
+      var select = document.getElementById("filterTsm");
+      select.innerHTML = '<option value="ALL">-- All TSMs --</option>';
+
+      (sessionData.adminData.rawEntries || []).forEach(function(entry) {
+        if ((monthValue === "ALL" || entry.month === monthValue) &&
+            (selectedRsm === "ALL" || entry.rsmName === selectedRsm)) {
+          tsms[entry.tsmName] = true;
+        }
+      });
+
+      Object.keys(tsms).sort().forEach(function(tsmName) {
+        select.insertAdjacentHTML("beforeend", '<option value="' + escapeAttr(tsmName) + '">' + escapeHtml(tsmName) + "</option>");
+      });
+      select.value = optionExists(select, previousValue) ? previousValue : "ALL";
+    }
+
+    function updateSrDropdown(monthValue, selectedRsm, selectedTsm, previousValue) {
+      var srs = {};
+      var select = document.getElementById("filterSr");
+      select.innerHTML = '<option value="ALL">-- All SRs --</option>';
+
+      (sessionData.adminData.rawEntries || []).forEach(function(entry) {
+        if ((monthValue === "ALL" || entry.month === monthValue) &&
+            (selectedRsm === "ALL" || entry.rsmName === selectedRsm) &&
+            (selectedTsm === "ALL" || entry.tsmName === selectedTsm)) {
+          srs[entry.srName] = true;
+        }
+      });
+
+      Object.keys(srs).sort().forEach(function(srName) {
+        select.insertAdjacentHTML("beforeend", '<option value="' + escapeAttr(srName) + '">' + escapeHtml(srName) + "</option>");
+      });
+      select.value = optionExists(select, previousValue) ? previousValue : "ALL";
+    }
+
+    function syncAdminFilterOptions() {
+      var monthValue = document.getElementById("filterMonth").value || "ALL";
+      var previousRsm = document.getElementById("filterRsm").value || "ALL";
+      var previousTsm = document.getElementById("filterTsm").value || "ALL";
+      var previousSr = document.getElementById("filterSr").value || "ALL";
+
+      populateRsmFilter(monthValue, previousRsm);
+      var activeRsm = document.getElementById("filterRsm").value || "ALL";
+      updateTsmDropdown(monthValue, activeRsm, previousTsm);
+      var activeTsm = document.getElementById("filterTsm").value || "ALL";
+      updateSrDropdown(monthValue, activeRsm, activeTsm, previousSr);
+    }
+
+    function applyAdminCascadingFilters() {
+      if (!sessionData.adminData) {
+        return;
+      }
+
+      syncAdminFilterOptions();
+
+      var monthVal = document.getElementById("filterMonth").value;
+      var rsmVal = document.getElementById("filterRsm").value;
+      var tsmVal = document.getElementById("filterTsm").value;
+      var srVal = document.getElementById("filterSr").value;
+      var productVal = document.getElementById("filterProduct").value;
+
+      var filteredDealerRows = (sessionData.adminData.rawEntries || []).filter(function(entry) {
+        return (monthVal === "ALL" || entry.month === monthVal) &&
+          (rsmVal === "ALL" || entry.rsmName === rsmVal) &&
+          (tsmVal === "ALL" || entry.tsmName === tsmVal) &&
+          (srVal === "ALL" || entry.srName === srVal);
+      });
+
+      renderCascadingGrid(filteredDealerRows, productVal);
+      calculateSubmissionTracker(monthVal, rsmVal, tsmVal, srVal);
+    }
+
+    function renderCascadingGrid(entries, productFilter) {
+      var grouped = {};
+      var totalTargetVolume = 0;
+      var totalActualVolume = 0;
+
+      entries.forEach(function(entry) {
+        var key = [entry.rsmName, entry.tsmName, entry.srName].join("|");
+        var targetValue = productFilter === "ALL" ? (parseFloat(entry.dealerTarget) || 0) : (parseFloat(entry.productQuantities[productFilter]) || 0);
+        var actualMapKey = entry.month + "|" + entry.srName.toLowerCase();
+        var actualValue = getActualValueForFilter(actualMapKey, productFilter);
+
+        if (!grouped[key]) {
+          grouped[key] = {
+            rsm: entry.rsmName,
+            tsm: entry.tsmName,
+            sr: entry.srName,
+            targetQty: 0,
+            actualQty: 0,
+            actualKeys: {}
+          };
+        }
+
+        grouped[key].targetQty += targetValue;
+        var actualDedupKey = productFilter === "ALL" ? actualMapKey : actualMapKey + "|" + productFilter;
+        if (!grouped[key].actualKeys[actualDedupKey]) {
+          grouped[key].actualKeys[actualDedupKey] = true;
+          grouped[key].actualQty += actualValue;
+        }
+      });
+
+      var groupedRows = Object.keys(grouped).map(function(key) {
+        return grouped[key];
+      });
+
+      groupedRows.forEach(function(row) {
+        totalTargetVolume += row.targetQty;
+        totalActualVolume += row.actualQty;
+      });
+
+      sessionData.currentFilteredEntries = groupedRows;
+      updateKpis(totalTargetVolume, totalActualVolume);
+      renderAdminTable(groupedRows);
+    }
+
+    function getActualValueForFilter(actualMapKey, productFilter) {
+      if (productFilter === "ALL") {
+        return parseFloat((sessionData.adminData.actualBySrMonth || {})[actualMapKey]) || 0;
+      }
+      return parseFloat((sessionData.adminData.actualBySrMonthProduct || {})[actualMapKey + "|" + productFilter]) || 0;
+    }
+
+    function updateKpis(totalTargetVolume, totalActualVolume) {
+      var netGap = totalActualVolume - totalTargetVolume;
+      document.getElementById("totalVolumeKPI").innerHTML = totalTargetVolume.toFixed(2) + ' <span class="text-xs font-normal text-slate-400">Ctn</span>';
+      document.getElementById("totalActualVolumeKPI").innerHTML = totalActualVolume.toFixed(2) + ' <span class="text-xs font-normal text-slate-400">Ctn</span>';
+      document.getElementById("netQtyGapKPI").className = "text-xl font-black mt-1 font-mono " + (netGap >= 0 ? "text-emerald-400" : "text-rose-500");
+      document.getElementById("netQtyGapKPI").innerHTML = (netGap >= 0 ? "+" : "") + netGap.toFixed(2) + ' <span class="text-xs font-normal text-slate-400">Ctn</span>';
+    }
+
+    function renderAdminTable(rows) {
+      var tbody = document.getElementById("adminReportBody");
+      tbody.innerHTML = "";
+
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td class="p-4 text-left text-slate-400" colspan="7">No data found for the current filters.</td></tr>';
+        return;
+      }
+
+      rows.forEach(function(row) {
+        var variance = row.actualQty - row.targetQty;
+        var pct = row.targetQty > 0 ? (row.actualQty / row.targetQty) * 100 : 0;
+        tbody.insertAdjacentHTML("beforeend",
+          '<tr class="hover:bg-slate-800/30 text-[13px] border-b border-slate-800">' +
+            '<td class="p-4 font-bold text-indigo-400 text-left">' + escapeHtml(row.rsm) + '</td>' +
+            '<td class="p-4 font-semibold text-slate-200 text-left">' + escapeHtml(row.tsm) + '</td>' +
+            '<td class="p-4 text-center text-slate-300 font-mono">' + escapeHtml(row.sr) + '</td>' +
+            '<td class="p-4 text-right font-bold text-teal-400 font-mono">' + row.targetQty.toFixed(2) + '</td>' +
+            '<td class="p-4 text-right font-bold text-emerald-400 font-mono bg-emerald-950/5">' + row.actualQty.toFixed(2) + '</td>' +
+            '<td class="p-4 text-right font-bold font-mono ' + (variance >= 0 ? "text-emerald-400" : "text-rose-500") + '">' + (variance >= 0 ? "+" : "") + variance.toFixed(2) + '</td>' +
+            '<td class="p-4 text-center font-black text-indigo-400 font-mono bg-slate-900/40">' + pct.toFixed(1) + '%</td>' +
+          '</tr>'
+        );
+      });
+    }
+
+    function calculateSubmissionTracker(monthVal, rsmVal, tsmVal, srVal) {
+      var trackerData = buildSubmissionTrackerData(monthVal, rsmVal, tsmVal);
+      sessionData.pendingTsms = trackerData.pendingTsms;
+      sessionData.pendingTracker = trackerData.summary;
+      console.info("Submission Tracker Debug", {
+        source: {
+          totalTsmsFromUserMaster: trackerData.summary.totalTsms,
+          submittedTsmsFromMonthlyLedger: trackerData.summary.submittedTsms,
+          pendingTsmsCalculated: trackerData.summary.pendingTsms
+        },
+        filters: {
+          month: monthVal,
+          rsm: rsmVal,
+          tsm: tsmVal,
+          sr: srVal
+        },
+        submittedTsmIds: trackerData.submittedTsmIds,
+        pendingTsmIds: trackerData.pendingTsms.map(function(tsm) { return tsm.tsmId; })
+      });
+      document.getElementById("submissionKPI").innerHTML =
+        trackerData.summary.submittedTsms + " / " + trackerData.summary.totalTsms + " <span class='text-[10px] font-normal text-slate-400'>TSM Submitted</span>" +
+        " <span class='text-[10px] font-normal text-amber-300'>| " + trackerData.summary.pendingTsms + " Pending</span>";
+    }
+
+    function buildSubmissionTrackerData(monthVal, rsmVal, tsmVal) {
+      var expectedTsms = [];
+      var expectedTsmKeys = {};
+      (sessionData.adminData.allActiveTsms || []).forEach(function(tsm) {
+        var tsmKey = String(tsm.tsmId || "").trim().toLowerCase();
+        if (!tsmKey || expectedTsmKeys[tsmKey]) {
           return;
         }
+        if ((rsmVal !== "ALL" && tsm.rsmName !== rsmVal) ||
+            (tsmVal !== "ALL" && tsm.name !== tsmVal)) {
+          return;
+        }
+        expectedTsmKeys[tsmKey] = true;
+        expectedTsms.push(tsm);
+      });
 
-        el.classList.remove("hidden");
-        if (type === "success") {
-          el.classList.add("border-emerald-400/30", "bg-emerald-500/10", "text-emerald-200");
+      var submittedMap = {};
+      (sessionData.adminData.rawEntries || []).forEach(function(entry) {
+        var entryTsmKey = String(entry.tsmId || "").trim().toLowerCase();
+        if (!entryTsmKey ||
+            (monthVal !== "ALL" && entry.month !== monthVal) ||
+            (rsmVal !== "ALL" && entry.rsmName !== rsmVal) ||
+            (tsmVal !== "ALL" && entry.tsmName !== tsmVal)) {
+          return;
+        }
+        submittedMap[entryTsmKey] = true;
+      });
+
+      var submittedTsms = 0;
+      var pendingTsms = [];
+      expectedTsms.forEach(function(tsm) {
+        var tsmKey = String(tsm.tsmId || "").trim().toLowerCase();
+        if (submittedMap[tsmKey]) {
+          submittedTsms++;
         } else {
-          el.classList.add("border-orange-400/30", "bg-orange-500/10", "text-orange-200");
+          pendingTsms.push({
+            tsmId: tsm.tsmId,
+            name: tsm.name,
+            area: tsm.area,
+            status: "Pending"
+          });
         }
+      });
+
+      return {
+        pendingTsms: pendingTsms,
+        submittedTsmIds: Object.keys(submittedMap).sort(),
+        summary: {
+          totalTsms: expectedTsms.length,
+          submittedTsms: submittedTsms,
+          pendingTsms: Math.max(expectedTsms.length - submittedTsms, 0)
+        }
+      };
+    }
+
+    function showPendingTsmModal() {
+      if (sessionData.adminData) {
+        calculateSubmissionTracker(
+          document.getElementById("filterMonth").value || "ALL",
+          document.getElementById("filterRsm").value || "ALL",
+          document.getElementById("filterTsm").value || "ALL",
+          document.getElementById("filterSr").value || "ALL"
+        );
       }
-    };
 
-    var AdminView = {
-      render: function(payload) {
-        AppState.adminView = payload || { rows: [], rowCount: 0, totalTarget: 0 };
-        Dom.tsmView.classList.add("hidden");
-        Dom.adminView.classList.remove("hidden");
+      var container = document.getElementById("pendingTsmListContainer");
+      container.innerHTML = "";
+      var tracker = sessionData.pendingTracker || {
+        totalTsms: 0,
+        submittedTsms: 0,
+        pendingTsms: 0
+      };
 
-        document.getElementById("adminRowCount").textContent = AppState.adminView.rowCount || 0;
-        document.getElementById("adminTotalTarget").textContent = Number(AppState.adminView.totalTarget || 0).toFixed(2);
+      container.insertAdjacentHTML("beforeend",
+        '<div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">' +
+          '<p class="text-slate-100 font-bold">Submission Summary</p>' +
+          '<p class="text-xs text-slate-400 mt-1">TSMs: ' + tracker.submittedTsms + ' submitted / ' + tracker.totalTsms + ' expected</p>' +
+          '<p class="text-xs text-amber-300 mt-1">Pending: ' + tracker.pendingTsms + ' TSMs</p>' +
+        '</div>'
+      );
 
-        var html = [];
-        (AppState.adminView.rows || []).forEach(function(row) {
-          html.push("<tr>");
-          html.push('<td class="sticky-col text-left font-bold">' + MatrixModule.escape(row.rsmName) + "</td>");
-          html.push('<td class="text-left">' + MatrixModule.escape(row.tsmName) + "</td>");
-          html.push('<td class="text-left">' + MatrixModule.escape(row.tsmId) + "</td>");
-          html.push('<td class="text-left">' + MatrixModule.escape(row.srName) + "</td>");
-          html.push('<td class="text-left">' + MatrixModule.escape(row.dealerCode) + "</td>");
-          html.push('<td class="text-left">' + MatrixModule.escape(row.dealerName) + "</td>");
-          html.push('<td class="text-left">' + MatrixModule.escape(row.territory) + "</td>");
-          html.push('<td class="text-right font-black text-sky-300">' + Number(row.dealerTarget || 0).toFixed(2) + "</td>");
-          html.push("</tr>");
+      if (!sessionData.pendingTsms.length) {
+        container.insertAdjacentHTML("beforeend", '<div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-emerald-300">All tracked TSMs have submitted for the selected filters.</div>');
+      } else {
+        container.insertAdjacentHTML("beforeend",
+          '<div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 grid grid-cols-4 gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">' +
+            '<div>TSM ID</div><div>TSM Name</div><div>Area</div><div>Status</div>' +
+          '</div>'
+        );
+        sessionData.pendingTsms.forEach(function(tsm) {
+          container.insertAdjacentHTML("beforeend",
+            '<div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 grid grid-cols-4 gap-2 text-sm items-center">' +
+              '<div class="font-mono text-slate-100">' + escapeHtml(tsm.tsmId) + '</div>' +
+              '<div class="font-bold text-slate-100">' + escapeHtml(tsm.name || tsm.tsmId) + '</div>' +
+              '<div class="text-slate-300">' + escapeHtml(tsm.area || "-") + '</div>' +
+              '<div class="text-amber-300 font-bold">' + escapeHtml(tsm.status || "Pending") + '</div>' +
+            '</div>'
+          );
         });
-
-        if (!html.length) {
-          html.push('<tr><td class="sticky-col text-left font-bold">No rows</td><td colspan="7" class="text-left text-slate-400">No ledger rows found for the selected month.</td></tr>');
-        }
-
-        Dom.adminBody.innerHTML = html.join("");
-      },
-
-      reload: function(monthKey) {
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (!response || !response.ok) {
-              SubmissionModule.showMessage(response && response.message ? response.message : "Unable to load admin ledger.", "error");
-              return;
-            }
-            AdminView.render(response.adminView);
-          })
-          .withFailureHandler(function(error) {
-            SubmissionModule.showMessage(error && error.message ? error.message : String(error), "error");
-          })
-          .getAdminLedgerData(AppState.sessionToken, monthKey);
       }
-    };
+      document.getElementById("pendingModal").classList.remove("hidden");
+      document.getElementById("pendingModal").classList.add("flex");
+    }
 
-    AuthModule.bind();
-    SubmissionModule.bind();
+    function closePendingTsmModal() {
+      document.getElementById("pendingModal").classList.add("hidden");
+      document.getElementById("pendingModal").classList.remove("flex");
+    }
+
+    function clearAdminFilters() {
+      document.getElementById("filterMonth").value = "ALL";
+      document.getElementById("filterRsm").value = "ALL";
+      document.getElementById("filterTsm").value = "ALL";
+      document.getElementById("filterSr").value = "ALL";
+      document.getElementById("filterProduct").value = "ALL";
+      applyAdminCascadingFilters();
+    }
+
+    function refreshAdminLedgerData() {
+      var refreshBtn = document.getElementById("adminRefreshBtn");
+      refreshBtn.disabled = true;
+      refreshBtn.innerText = "Refreshing...";
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          refreshBtn.disabled = false;
+          refreshBtn.innerText = "Refresh Ledger";
+          if (!res || !res.ok) {
+            alert(res && res.message ? res.message : "Unable to refresh dashboard.");
+            return;
+          }
+          launchAdminDashboard(res.adminData);
+        })
+        .withFailureHandler(function(error) {
+          refreshBtn.disabled = false;
+          refreshBtn.innerText = "Refresh Ledger";
+          alert(error && error.message ? error.message : String(error));
+        })
+        .getAdminDashboardData(sessionData.sessionToken, document.getElementById("filterMonth").value);
+    }
+
+    function downloadFilteredCSV() {
+      if (!sessionData.currentFilteredEntries.length) {
+        alert("No data available to download.");
+        return;
+      }
+
+      var csv = "\uFEFFRSM / Zone,TSM Name,SR Representative,Target Qty (Ctn),Actual Sales Qty (Ctn),Qty Variance / Gap,Achievement %\r\n";
+      sessionData.currentFilteredEntries.forEach(function(row) {
+        var pct = row.targetQty > 0 ? ((row.actualQty / row.targetQty) * 100).toFixed(1) : "0.0";
+        csv += '"' + escapeCsv(row.rsm) + '","' + escapeCsv(row.tsm) + '","' + escapeCsv(row.sr) + '",' +
+          row.targetQty.toFixed(2) + "," + row.actualQty.toFixed(2) + "," + (row.actualQty - row.targetQty).toFixed(2) + "," + pct + "%\r\n";
+      });
+
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var link = document.createElement("a");
+      link.setAttribute("href", URL.createObjectURL(blob));
+      link.setAttribute("download", "Qty_Report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function triggerSystemPrint() {
+      var monthSelect = document.getElementById("filterMonth");
+      var rsmSelect = document.getElementById("filterRsm");
+      var tsmSelect = document.getElementById("filterTsm");
+      var srSelect = document.getElementById("filterSr");
+
+      document.getElementById("pMetaMonth").innerText = monthSelect.options[monthSelect.selectedIndex] ? monthSelect.options[monthSelect.selectedIndex].text : "ALL";
+      document.getElementById("pMetaRsm").innerText = rsmSelect.options[rsmSelect.selectedIndex] ? rsmSelect.options[rsmSelect.selectedIndex].text : "ALL";
+      document.getElementById("pMetaTsm").innerText = tsmSelect.options[tsmSelect.selectedIndex] ? tsmSelect.options[tsmSelect.selectedIndex].text : "ALL";
+      document.getElementById("pMetaSr").innerText = srSelect.options[srSelect.selectedIndex] ? srSelect.options[srSelect.selectedIndex].text : "ALL";
+      document.getElementById("pMetaTime").innerText = new Date().toLocaleString();
+      setTimeout(function() { window.print(); }, 250);
+    }
+
+    function optionExists(selectEl, value) {
+      for (var i = 0; i < selectEl.options.length; i++) {
+        if (selectEl.options[i].value === value) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function getTsmNameById(tsmId) {
+      var users = sessionData.adminData && sessionData.adminData.allActiveTsms ? sessionData.adminData.allActiveTsms : [];
+      var normalizedId = String(tsmId || "").toLowerCase();
+      for (var i = 0; i < users.length; i++) {
+        if (String(users[i].tsmId || "").toLowerCase() === normalizedId) {
+          return users[i].name;
+        }
+      }
+      return "";
+    }
+
+    function normalizeClientMonthKey(value) {
+      if (value === undefined || value === null || value === "") {
+        return "";
+      }
+      if (value === "ALL") {
+        return "ALL";
+      }
+      if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value.getTime())) {
+        return formatMonthKeyFromDate(value);
+      }
+
+      var text = String(value).trim();
+      if (!text) {
+        return "";
+      }
+      if (/^[A-Za-z]{3}-\d{4}$/.test(text)) {
+        return text;
+      }
+      if (/^[A-Za-z]+ \d{4}$/.test(text)) {
+        var longMonthDate = new Date("1 " + text);
+        if (!isNaN(longMonthDate.getTime())) {
+          return formatMonthKeyFromDate(longMonthDate);
+        }
+      }
+      if (/^\d{4}-\d{2}$/.test(text)) {
+        return formatMonthKeyFromDate(new Date(text + "-01T00:00:00"));
+      }
+
+      var fallback = new Date(text);
+      if (!isNaN(fallback.getTime())) {
+        return formatMonthKeyFromDate(fallback);
+      }
+      return text;
+    }
+
+    function buildClientAssignmentKey(dealerCode, srName) {
+      return String(dealerCode || "").trim().toLowerCase() + "|" + String(srName || "").trim().toLowerCase();
+    }
+
+    function formatMonthKeyFromDate(dateObj) {
+      var shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return shortMonths[dateObj.getMonth()] + "-" + dateObj.getFullYear();
+    }
+
+    function formatMonthLabel(value) {
+      var normalized = normalizeClientMonthKey(value);
+      if (!normalized || normalized === "ALL") {
+        return normalized === "ALL" ? "All Months" : "";
+      }
+      var parts = normalized.split("-");
+      var longMonths = {
+        Jan: "January",
+        Feb: "February",
+        Mar: "March",
+        Apr: "April",
+        May: "May",
+        Jun: "June",
+        Jul: "July",
+        Aug: "August",
+        Sep: "September",
+        Oct: "October",
+        Nov: "November",
+        Dec: "December"
+      };
+      return (longMonths[parts[0]] || parts[0]) + " " + parts[1];
+    }
+
+    function cloneObject(obj) {
+      return JSON.parse(JSON.stringify(obj || {}));
+    }
+
+    function formatShortTime(dateObj) {
+      return dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function escapeHtml(value) {
+      return String(value === undefined || value === null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    function escapeCsv(value) {
+      return String(value === undefined || value === null ? "" : value).replace(/"/g, '""');
+    }
   </script>
+
+  <footer class="mt-10 mb-4 text-center">
+    <div class="inline-flex items-center gap-3 bg-[#111827]/40 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800/60 shadow-xl text-xs font-semibold text-slate-400">
+      <span>&copy; 2026 <a href="https://itsmebillah.github.io/" target="_blank" rel="noopener noreferrer" class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-indigo-400 font-bold hover:opacity-90">Md. Masum Billah</a></span>
+      <a href="https://wa.me/8801915966721" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center text-emerald-400 hover:text-emerald-300" aria-label="WhatsApp">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-4 h-4 fill-current" aria-hidden="true">
+          <path d="M19.11 17.47c-.27-.14-1.58-.78-1.82-.87-.24-.09-.41-.14-.59.14-.17.27-.67.87-.82 1.05-.15.18-.3.2-.56.07-.27-.14-1.12-.41-2.13-1.3-.79-.7-1.33-1.57-1.49-1.84-.16-.27-.02-.41.12-.55.12-.12.27-.3.41-.45.14-.15.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.59-1.43-.81-1.96-.21-.51-.43-.44-.59-.45h-.5c-.18 0-.45.07-.69.34s-.9.88-.9 2.14.92 2.49 1.05 2.67c.14.18 1.82 2.78 4.4 3.89.61.26 1.09.42 1.46.54.61.19 1.16.16 1.6.1.49-.07 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.06-.11-.24-.18-.51-.32Z"/>
+          <path d="M16.01 3.2c-7.06 0-12.8 5.72-12.8 12.76 0 2.25.59 4.45 1.71 6.39L3.1 28.8l6.63-1.74a12.84 12.84 0 0 0 6.28 1.61h.01c7.05 0 12.79-5.73 12.79-12.77 0-3.41-1.33-6.62-3.75-9.03A12.72 12.72 0 0 0 16.01 3.2Zm0 23.31h-.01a10.7 10.7 0 0 1-5.46-1.5l-.39-.23-3.94 1.03 1.05-3.84-.25-.4a10.57 10.57 0 0 1-1.62-5.67c0-5.87 4.78-10.65 10.66-10.65 2.85 0 5.53 1.11 7.55 3.12a10.55 10.55 0 0 1 3.13 7.54c0 5.88-4.79 10.66-10.72 10.66Z"/>
+        </svg>
+      </a>
+      <span class="text-slate-800">|</span>
+      <span>Target &amp; Analytics Portal</span>
+    </div>
+  </footer>
+
 </body>
 </html>

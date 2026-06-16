@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submission Print</title>
+  <style>
+    body { margin: 0; padding: 24px; font-family: Arial, sans-serif; color: #111827; background: #ffffff; }
+    .sheet { max-width: 1100px; margin: 0 auto; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 18px; }
+    .toolbar button { border: 0; border-radius: 999px; padding: 10px 16px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .toolbar .print-btn { background: #059669; color: #ffffff; }
+    .toolbar .pdf-btn { background: #4f46e5; color: #ffffff; }
+    .toolbar .close-btn { background: #e5e7eb; color: #111827; }
+    .header { border-bottom: 2px solid #111827; padding-bottom: 16px; margin-bottom: 20px; }
+    .header h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .header p { margin: 0; color: #4b5563; font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em; }
+    .section { margin-top: 24px; }
+    .section h2 { margin: 0 0 12px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
+    .summary-item { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #d1d5db; padding: 6px 0; font-size: 13px; }
+    .summary-item label { color: #4b5563; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #d1d5db; padding: 8px 10px; font-size: 12px; text-align: center; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f3f4f6; }
+    .muted { color: #6b7280; }
+    @media print {
+      body { padding: 0; }
+      .sheet { max-width: none; }
+      .toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="toolbar">
+      <button type="button" class="print-btn" onclick="window.print()">Print</button>
+      <button type="button" class="pdf-btn" onclick="window.print()">Download PDF</button>
+      <button type="button" class="close-btn" onclick="window.close()">Close</button>
+    </div>
+
+    <div class="header">
+      <h1 id="companyName"></h1>
+      <p id="documentTitle"></p>
+      <div class="summary-grid" style="margin-top:12px;">
+        <div class="summary-item"><label>Reference Number</label><span id="headerReference"></span></div>
+        <div class="summary-item"><label>Month</label><span id="headerMonth"></span></div>
+        <div class="summary-item"><label>TSM Name</label><span id="headerTsm"></span></div>
+        <div class="summary-item"><label>Area</label><span id="headerArea"></span></div>
+        <div class="summary-item"><label>Submission Time</label><span id="headerSubmittedAt"></span></div>
+        <div class="summary-item"><label>Total Dealers</label><span id="headerDealers"></span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Submission Summary</h2>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="section">
+      <h2>Dealer-wise Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Dealer Name</th>
+            <th>SR Name</th>
+            <th>Dealer Target</th>
+          </tr>
+        </thead>
+        <tbody id="dealerSummaryBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Detailed Product Matrix</h2>
+      <table>
+        <thead id="matrixHead"></thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    var payload = <?!= printPayloadJson ?>;
+
+    function escapeHtml(value) {
+      return String(value === undefined || value === null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function normalizeMonthKey(value) {
+      if (value === undefined || value === null || value === "") {
+        return "";
+      }
+      if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value.getTime())) {
+        return formatMonthKeyFromDate(value);
+      }
+
+      var text = String(value).trim();
+      if (!text) {
+        return "";
+      }
+      if (/^[A-Za-z]{3}-\d{4}$/.test(text)) {
+        return text;
+      }
+      if (/^[A-Za-z]+ \d{4}$/.test(text)) {
+        var longMonthDate = new Date("1 " + text);
+        if (!isNaN(longMonthDate.getTime())) {
+          return formatMonthKeyFromDate(longMonthDate);
+        }
+      }
+
+      var fallback = new Date(text);
+      if (!isNaN(fallback.getTime())) {
+        return formatMonthKeyFromDate(fallback);
+      }
+      return text;
+    }
+
+    function formatMonthKeyFromDate(dateObj) {
+      var shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return shortMonths[dateObj.getMonth()] + "-" + dateObj.getFullYear();
+    }
+
+    function formatMonthLabel(value) {
+      var normalized = normalizeMonthKey(value);
+      if (!normalized) {
+        return "";
+      }
+      var parts = normalized.split("-");
+      var longMonths = {
+        Jan: "January",
+        Feb: "February",
+        Mar: "March",
+        Apr: "April",
+        May: "May",
+        Jun: "June",
+        Jul: "July",
+        Aug: "August",
+        Sep: "September",
+        Oct: "October",
+        Nov: "November",
+        Dec: "December"
+      };
+      return (longMonths[parts[0]] || parts[0]) + " " + parts[1];
+    }
+
+    function renderSummary() {
+      document.getElementById("companyName").textContent = payload.companyName || "";
+      document.getElementById("documentTitle").textContent = payload.title || "";
+
+      var summary = payload.summary || {};
+      document.getElementById("headerReference").textContent = summary.referenceNumber || "";
+      document.getElementById("headerMonth").textContent = formatMonthLabel(summary.month);
+      document.getElementById("headerTsm").textContent = summary.tsmName || "";
+      document.getElementById("headerArea").textContent = summary.area || "";
+      document.getElementById("headerSubmittedAt").textContent = summary.submittedAt || "Not Available";
+      document.getElementById("headerDealers").textContent = String(summary.totalDealersSubmitted || 0);
+      var summaryItems = [
+        ["Month", formatMonthLabel(summary.month)],
+        ["TSM Name", summary.tsmName],
+        ["Area", summary.area],
+        ["Reference Number", summary.referenceNumber],
+        ["Submitted At", summary.submittedAt || "Not Available"],
+        ["Total Dealers Submitted", summary.totalDealersSubmitted],
+        ["Total Target Qty", Number(summary.totalTargetQty || 0).toFixed(2)]
+      ];
+
+      var summaryGrid = document.getElementById("summaryGrid");
+      summaryItems.forEach(function(item) {
+        var div = document.createElement("div");
+        div.className = "summary-item";
+        div.innerHTML = "<label>" + escapeHtml(item[0]) + "</label><span>" + escapeHtml(item[1]) + "</span>";
+        summaryGrid.appendChild(div);
+      });
+    }
+
+    function renderDealerSummary() {
+      var body = document.getElementById("dealerSummaryBody");
+      (payload.dealerSummary || []).forEach(function(row) {
+        body.insertAdjacentHTML("beforeend",
+          "<tr>" +
+            "<td>" + escapeHtml(row.dealerName) + "</td>" +
+            "<td>" + escapeHtml(row.srName) + "</td>" +
+            "<td>" + Number(row.dealerTarget || 0).toFixed(2) + "</td>" +
+          "</tr>"
+        );
+      });
+    }
+
+    function renderMatrix() {
+      var detailed = payload.detailedMatrix || {};
+      var products = detailed.products || [];
+      var dealerColumns = detailed.dealerColumns || [];
+      var previousEntries = detailed.previousEntries || {};
+
+      var head = document.getElementById("matrixHead");
+      var headRow1 = ['<tr><th rowspan="2">Product Name</th>'];
+      var headRow2 = ["<tr>"];
+
+      dealerColumns.forEach(function(dealer) {
+        headRow1.push("<th>" + escapeHtml(dealer.dealerCode) + "<br><span class='muted'>" + escapeHtml(dealer.dealerName) + "</span></th>");
+        headRow2.push("<th>" + escapeHtml(dealer.srName) + "</th>");
+      });
+      headRow1.push("</tr>");
+      headRow2.push("</tr>");
+      head.innerHTML = headRow1.join("") + headRow2.join("");
+
+      var body = document.getElementById("matrixBody");
+      products.forEach(function(product) {
+        var rowHtml = "<tr><td>" + escapeHtml(product.productName) + " (" + escapeHtml(product.size || "") + ")</td>";
+        dealerColumns.forEach(function(dealer) {
+          var assignmentKey = dealer.assignmentKey || (String(dealer.dealerCode || "").trim().toLowerCase() + "|" + String(dealer.srName || "").trim().toLowerCase());
+          var value = 0;
+          if (previousEntries[assignmentKey] && previousEntries[assignmentKey][product.productKey] !== undefined) {
+            value = previousEntries[assignmentKey][product.productKey];
+          }
+          rowHtml += "<td>" + Number(value || 0).toFixed(2) + "</td>";
+        });
+        rowHtml += "</tr>";
+        body.insertAdjacentHTML("beforeend", rowHtml);
+      });
+    }
+
+    renderSummary();
+    renderDealerSummary();
+    renderMatrix();
+    window.onload = function() {
+      if (payload.options && payload.options.autoPrint) {
+        window.print();
+      }
+    };
+  </script>
+</body>
+</html>
